@@ -1,0 +1,7 @@
+bcrypt
+djangorestframework
+sumy
+googletrans
+gtts
+pygame
+sympy
