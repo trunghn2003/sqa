@@ -676,6 +676,11 @@ class AddRatingAndReviewView(APIView):
             return Response({"error": "All fields (book_id, user_id, rating, review) are required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate rating range
+        if not (1 <= rating <= 5):
+            return Response({"error": "Rating must be between 1 and 5."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         # Fetch the book and reader objects
         try:
             book = Book.objects.get(pk=book_id)
@@ -684,6 +689,16 @@ class AddRatingAndReviewView(APIView):
             return Response({"error": "Book not found."}, status=status.HTTP_404_NOT_FOUND)
         except Reader.DoesNotExist:
             return Response({"error": "Reader not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if book is accepted
+        if book.status != Book.Status.ACCEPTED:
+            return Response({"error": "Cannot review a book that is not accepted."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Check for duplicate review
+        if Rating_And_Review.objects.filter(book=book, reader=reader).exists():
+            return Response({"error": "You have already reviewed this book."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Create the Rating_And_Review entry
         Rating_And_Review.objects.create(

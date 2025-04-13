@@ -54,7 +54,7 @@ urlpatterns = [
     path('getMostReadedBook/', MostReaded_BookListView.as_view()),
     path('getMostRatingBook/', MostRating_BookListView.as_view()),
     path('getLastUploadedBook/', LastUploaded_BookListView.as_view()),
-    path('insertRatingAndReview/', AddRatingAndReviewView.as_view()),
+    path('insertRatingAndReview/', AddRatingAndReviewView.as_view(), name='insertRatingAndReview'),
     path('list_Three-rating_and_review/', RatingAndReviewListView.as_view()),
     path('search/', BookSearchView.as_view()),
     path('getMostReadedPreferencesBook/', MostReadedPreferences_BookListView.as_view()),
