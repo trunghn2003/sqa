@@ -1452,7 +1452,7 @@ class RankPageTests(TestCase):
 class WishListPageTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.url = reverse('wishListPage')  # Đảm bảo tên này trùng với tên trong urls.py
+        self.url = reverse('wish-listPage')  # Đảm bảo tên này trùng với tên trong urls.py
 
     def test_truy_cap_trang_wishlist_thanh_cong(self):
         """
