@@ -101,11 +101,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         print(f"Response status code: {response.status_code}")
         print(f"Response data: {response.data}")
 
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, 
                         "Response status code should be 201 Created")
         
-        # Kiem tra trang thai database
+        # Kiểm thử trang thai database
         final_review_count = Rating_And_Review.objects.count()
         self.assertEqual(final_review_count, initial_review_count + 1,
                         f"Review count should increase by 1 (was {initial_review_count}, now {final_review_count})")
@@ -116,13 +116,13 @@ class AddRatingAndReviewViewTests(APITestCase):
         self.assertEqual(new_review.review, 'Tuyet voi ong mat troi',
                         f"Review text should be 'Tuyet voi ong mat troi', got '{new_review.review}'")
         
-        # Kiem tra cap nhat diem
+        # Kiểm thử cap nhat diem
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
         self.assertEqual(final_points, initial_points + 20,
                         f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
         
-        # Kiem tra gamification record
+        # Kiểm thử gamification record
         gamification_record = Gamification_Record.objects.filter(
             reader_id=reader.reader_id,
             gamification_description="Rating And Review Book Achievement"
@@ -132,7 +132,7 @@ class AddRatingAndReviewViewTests(APITestCase):
         self.assertEqual(gamification_record.achieved_point, 20,
                         f"Gamification points should be 20, got {gamification_record.achieved_point}")
         
-        # Kiem tra notification
+        # Kiểm thử notification
         notification = Notification.objects.filter(
             reader_id=reader.reader_id,
             notification_title="New Point Achievement"
@@ -162,11 +162,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_nonexistent_book(self):
@@ -187,11 +187,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_nonexistent_reader(self):
@@ -212,11 +212,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_duplicate_review(self):
@@ -239,7 +239,7 @@ class AddRatingAndReviewViewTests(APITestCase):
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
-        # Kiem tra trang thai database sau lan review dau tien
+        # Kiểm thử trang thai database sau lan review dau tien
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
         
         # Thu gui review lan hai
@@ -247,11 +247,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
 
     def test_review_pending_book(self):
@@ -283,11 +283,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_review_rejected_book(self):
@@ -319,11 +319,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         
-        # Kiem tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         
-        # Kiem tra trang thai database (khong duoc thay doi)
+        # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_rating_range_validation_high(self):
@@ -345,11 +345,11 @@ class AddRatingAndReviewViewTests(APITestCase):
             request = self.factory.post(self.add_review_url, data, format='json')
             response = self.view(request)
             
-            # Kiem tra response
+            # Kiểm thử response
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('error', response.data)
             
-            # Kiem tra trang thai database (khong duoc thay doi)
+            # Kiểm thử trang thai database (khong duoc thay doi)
             self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
     def test_rating_range_validation_low(self):
@@ -371,11 +371,11 @@ class AddRatingAndReviewViewTests(APITestCase):
             request = self.factory.post(self.add_review_url, data, format='json')
             response = self.view(request)
             
-            # Kiem tra response
+            # Kiểm thử response
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('error', response.data)
             
-            # Kiem tra trang thai database (khong duoc thay doi)
+            # Kiểm thử trang thai database (khong duoc thay doi)
             self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
             
     def test_invalid_data_types(self):
@@ -495,11 +495,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
         
-        # Kiểm tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
         
-        # Kiểm tra cập nhật điểm và rank
+        # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
         final_rank = reader.reader_rank
@@ -541,11 +541,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
         
-        # Kiểm tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
         
-        # Kiểm tra cập nhật điểm và rank
+        # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
         final_rank = reader.reader_rank
@@ -587,11 +587,11 @@ class AddRatingAndReviewViewTests(APITestCase):
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
         
-        # Kiểm tra response
+        # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
         
-        # Kiểm tra cập nhật điểm và rank
+        # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
         final_rank = reader.reader_rank
@@ -643,7 +643,7 @@ class RatingAndReviewListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-RRL-01
-        Muc tieu: Kiem tra lay danh sach danh gia va nhan xet thanh cong
+        Muc tieu: Kiểm thử lay danh sach danh gia va nhan xet thanh cong
         Input: book_id = ID cua sach hop le
         Expected Output: HTTP 200, danh sach chua 1 danh gia voi rating = 5 va user_name = "Nguoi dung test"
         """
@@ -657,7 +657,7 @@ class RatingAndReviewListViewTests(APITestCase):
     def test_sach_khong_co_danh_gia(self):
         """
         Test Case ID: UT-RRL-02
-        Muc tieu: Kiem tra lay danh sach danh gia cho sach khong co danh gia
+        Muc tieu: Kiểm thử lay danh sach danh gia cho sach khong co danh gia
         Input: book_id = ID cua sach moi khong co danh gia
         Expected Output: HTTP 400, danh sach rong
         """
@@ -678,7 +678,7 @@ class RatingAndReviewListViewTests(APITestCase):
     def test_thieu_book_id(self):
         """
         Test Case ID: UT-RRL-03
-        Muc tieu: Kiem tra truong hop khong cung cap book_id
+        Muc tieu: Kiểm thử truong hop khong cung cap book_id
         Input: Khong co book_id trong query params
         Expected Output: HTTP 400, thong bao loi
         """
@@ -690,7 +690,7 @@ class RatingAndReviewListViewTests(APITestCase):
     def test_book_id_khong_hop_le(self):
         """
         Test Case ID: UT-RRL-04
-        Muc tieu: Kiem tra lay danh sach danh gia cho sach khong ton tai
+        Muc tieu: Kiểm thử lay danh sach danh gia cho sach khong ton tai
         Input: book_id = 999 (khong ton tai)
         Expected Output: HTTP 200, danh sach rong
         """
@@ -702,7 +702,7 @@ class RatingAndReviewListViewTests(APITestCase):
     def test_book_id_khong_phai_so(self):
         """
         Test Case ID: UT-RRL-05
-        Mục tiêu: Kiểm tra khi book_id không phải là số nguyên
+        Mục tiêu: Kiểm thử khi book_id không phải là số nguyên
         Input: book_id = "abc"
         Expected Output: HTTP 400, thông báo lỗi
         """
@@ -747,7 +747,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-MRB-01
-        Muc tieu: Kiem tra lay danh sach sach co diem cao nhat thanh cong
+        Muc tieu: Kiểm thử lay danh sach sach co diem cao nhat thanh cong
         Input: Khong co tham so loc
         Expected Output: HTTP 200, danh sach sap xep theo book_rating_avg giam dan, sach "Sach cao diem" dung dau
         """
@@ -759,7 +759,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_loc_theo_diem_toi_thieu(self):
         """
         Test Case ID: UT-MRB-02
-        Muc tieu: Kiem tra loc sach theo diem danh gia toi thieu
+        Muc tieu: Kiểm thử loc sach theo diem danh gia toi thieu
         Input: rating = 4
         Expected Output: HTTP 200, danh sach chi chua sach co diem >= 4
         """
@@ -772,7 +772,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_loc_theo_reading_counter(self):
         """
         Test Case ID: UT-MRB-03
-        Muc tieu: Kiem tra loc sach theo reading_counter toi thieu
+        Muc tieu: Kiểm thử loc sach theo reading_counter toi thieu
         Input: reading_counter = 75
         Expected Output: HTTP 200, danh sach chi chua sach co reading_counter >= 75
         """
@@ -785,7 +785,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_tham_so_loc_khong_hop_le(self):
         """
         Test Case ID: UT-MRB-04
-        Muc tieu: Kiem tra truong hop rating filter khong hop le
+        Muc tieu: Kiểm thử truong hop rating filter khong hop le
         Input: rating = "khong phai so"
         Expected Output: HTTP 400, thong bao loi
         """
@@ -797,7 +797,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_reading_counter_khong_hop_le(self):
         """
         Test Case ID: UT-MRB-05
-        Mục tiêu: Kiểm tra trường hợp reading_counter không hợp lệ
+        Mục tiêu: Kiểm thử trường hợp reading_counter không hợp lệ
         Input: reading_counter = "abc"
         Expected Output: HTTP 400, thông báo lỗi
         """
@@ -809,7 +809,7 @@ class MostRating_BookListViewTests(APITestCase):
     def test_khong_co_sach_thoa_man(self):
         """
         Test Case ID: UT-MRB-06
-        Muc tieu: Kiem tra truong hop khong co sach thoa man dieu kien loc
+        Muc tieu: Kiểm thử truong hop khong co sach thoa man dieu kien loc
         Input: rating = 6
         Expected Output: HTTP 200, danh sach rong
         """
@@ -854,7 +854,7 @@ class MostReaded_BookListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-MRD-01
-        Muc tieu: Kiem tra lay danh sach sach duoc doc nhieu nhat thanh cong
+        Muc tieu: Kiểm thử lay danh sach sach duoc doc nhieu nhat thanh cong
         Input: Khong co tham so
         Expected Output: HTTP 200, danh sach sap xep theo book_reading_counter giam dan, sach "Sach pho bien" dung dau
         """
@@ -866,7 +866,7 @@ class MostReaded_BookListViewTests(APITestCase):
     def test_phan_trang(self):
         """
         Test Case ID: UT-MRD-02
-        Muc tieu: Kiem tra phan trang danh sach sach duoc doc nhieu
+        Muc tieu: Kiểm thử phan trang danh sach sach duoc doc nhieu
         Input: page_size = 1
         Expected Output: HTTP 200, danh sach chi chua 1 sach
         """
@@ -878,7 +878,7 @@ class MostReaded_BookListViewTests(APITestCase):
     def test_khong_co_sach(self):
         """
         Test Case ID: UT-MRD-03
-        Muc tieu: Kiem tra truong hop khong co sach nao
+        Muc tieu: Kiểm thử truong hop khong co sach nao
         Input: Xoa tat ca sach
         Expected Output: HTTP 200, danh sach rong
         """
@@ -923,7 +923,7 @@ class LastUploaded_BookListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-LUB-01
-        Muc tieu: Kiem tra lay danh sach sach tai len moi nhat thanh cong
+        Muc tieu: Kiểm thử lay danh sach sach tai len moi nhat thanh cong
         Input: Khong co tham so
         Expected Output: HTTP 200, danh sach sap xep theo book_uploaded_date giam dan, sach "Sach moi" dung dau
         """
@@ -935,7 +935,7 @@ class LastUploaded_BookListViewTests(APITestCase):
     def test_phan_trang(self):
         """
         Test Case ID: UT-LUB-02
-        Muc tieu: Kiem tra phan trang danh sach sach tai len moi nhat
+        Muc tieu: Kiểm thử phan trang danh sach sach tai len moi nhat
         Input: page_size = 1
         Expected Output: HTTP 200, danh sach chi chua 1 sach
         """
@@ -947,7 +947,7 @@ class LastUploaded_BookListViewTests(APITestCase):
     def test_khong_co_sach(self):
         """
         Test Case ID: UT-LUB-03
-        Muc tieu: Kiem tra truong hop khong co sach nao
+        Muc tieu: Kiểm thử truong hop khong co sach nao
         Input: Xoa tat ca sach
         Expected Output: HTTP 200, danh sach rong
         """
@@ -995,7 +995,7 @@ class NotificationListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-NTL-01
-        Muc tieu: Kiem tra lay danh sach thong bao thanh cong
+        Muc tieu: Kiểm thử lay danh sach thong bao thanh cong
         Input: user_id = ID cua nguoi dung hop le
         Expected Output: HTTP 200, danh sach chua 1 thong bao voi tieu de "Tieu de test"
         """
@@ -1008,7 +1008,7 @@ class NotificationListViewTests(APITestCase):
     def test_thieu_user_id(self):
         """
         Test Case ID: UT-NTL-02
-        Muc tieu: Kiem tra truong hop khong cung cap user_id
+        Muc tieu: Kiểm thử truong hop khong cung cap user_id
         Input: Khong co user_id trong query params
         Expected Output: HTTP 400, thong bao loi
         """
@@ -1020,7 +1020,7 @@ class NotificationListViewTests(APITestCase):
     def test_user_id_khong_hop_le(self):
         """
         Test Case ID: UT-NTL-03
-        Muc tieu: Kiem tra lay danh sach thong bao cho nguoi dung khong ton tai
+        Muc tieu: Kiểm thử lay danh sach thong bao cho nguoi dung khong ton tai
         Input: user_id = 999 (khong ton tai)
         Expected Output: HTTP 404, thong bao loi
         """
@@ -1068,7 +1068,7 @@ class LastThreeNotificationListViewTests(APITestCase):
     def test_lay_danh_sach_thanh_cong(self):
         """
         Test Case ID: UT-LTN-01
-        Muc tieu: Kiem tra lay 3 thong bao moi nhat thanh cong
+        Muc tieu: Kiểm thử lay 3 thong bao moi nhat thanh cong
         Input: user_id = ID cua nguoi dung hop le
         Expected Output: HTTP 200, danh sach chua 3 thong bao, thong bao moi nhat co tieu de "Tieu de 4"
         """
@@ -1081,7 +1081,7 @@ class LastThreeNotificationListViewTests(APITestCase):
     def test_khong_co_thong_bao(self):
         """
         Test Case ID: UT-LTN-02
-        Muc tieu: Kiem tra truong hop khong co thong bao
+        Muc tieu: Kiểm thử truong hop khong co thong bao
         Input: user_id = ID cua nguoi dung, xoa tat ca thong bao
         Expected Output: HTTP 200, danh sach rong
         """
@@ -1094,7 +1094,7 @@ class LastThreeNotificationListViewTests(APITestCase):
     def test_user_id_khong_hop_le(self):
         """
         Test Case ID: UT-LTN-03
-        Muc tieu: Kiem tra lay thong bao cho nguoi dung khong ton tai
+        Muc tieu: Kiểm thử lay thong bao cho nguoi dung khong ton tai
         Input: user_id = 999 (khong ton tai)
         Expected Output: HTTP 400, thong bao loi
         """
@@ -1116,7 +1116,7 @@ class CreateBookViewTests(APITestCase):
     def test_tao_sach_thanh_cong(self):
         """
         Test Case ID: UT-CBK-01
-        Muc tieu: Kiem tra tao sach moi thanh cong
+        Muc tieu: Kiểm thử tao sach moi thanh cong
         Input: Du lieu sach hop le (book_name, book_author, book_type, book_barcode, book_description, category, status)
         Expected Output: HTTP 201, sach duoc tao voi ten "Sach moi"
         """
@@ -1138,7 +1138,7 @@ class CreateBookViewTests(APITestCase):
     def test_thieu_truong_bat_buoc(self):
         """
         Test Case ID: UT-CBK-02
-        Muc tieu: Kiem tra tao sach khi thieu truong bat buoc
+        Muc tieu: Kiểm thử tao sach khi thieu truong bat buoc
         Input: Du lieu thieu book_name
         Expected Output: HTTP 400, thong bao loi ve truong book_name
         """
@@ -1157,7 +1157,7 @@ class CreateBookViewTests(APITestCase):
     def test_danh_muc_khong_hop_le(self):
         """
         Test Case ID: UT-CBK-03
-        Muc tieu: Kiem tra tao sach voi danh muc khong ton tai
+        Muc tieu: Kiểm thử tao sach voi danh muc khong ton tai
         Input: category = 999 (khong ton tai)
         Expected Output: HTTP 400, thong bao loi
         """
@@ -1209,7 +1209,7 @@ class UploadedByViewTests(APITestCase):
     def test_lay_nguoi_tai_len_thanh_cong(self):
         """
         Test Case ID: UT-UBD-01
-        Muc tieu: Kiem tra lay ten nguoi tai len sach thanh cong
+        Muc tieu: Kiểm thử lay ten nguoi tai len sach thanh cong
         Input: book_id = ID cua sach duoc tai len boi nguoi dung
         Expected Output: HTTP 200, tra ve ten "Nguoi tai len"
         """
@@ -1221,7 +1221,7 @@ class UploadedByViewTests(APITestCase):
     def test_sach_do_quan_ly_tai_len(self):
         """
         Test Case ID: UT-UBD-02
-        Muc tieu: Kiem tra truong hop sach khong co ban ghi tai len (do quan ly tai len)
+        Muc tieu: Kiểm thử truong hop sach khong co ban ghi tai len (do quan ly tai len)
         Input: book_id = ID cua sach khong co ban ghi tai len
         Expected Output: HTTP 200, tra ve "Manager"
         """
@@ -1242,7 +1242,7 @@ class UploadedByViewTests(APITestCase):
     def test_book_id_khong_hop_le(self):
         """
         Test Case ID: UT-UBD-03
-        Muc tieu: Kiem tra truong hop book_id khong ton tai
+        Muc tieu: Kiểm thử truong hop book_id khong ton tai
         Input: book_id = 999 (khong ton tai)
         Expected Output: HTTP 200, tra ve "Manager"
         """
@@ -1253,7 +1253,7 @@ class UploadedByViewTests(APITestCase):
     def test_thieu_tham_so_book_id(self):
         """
         Test Case ID: UT-UBD-04
-        Mục tiêu: Kiểm tra khi không truyền tham số book_id
+        Mục tiêu: Kiểm thử khi không truyền tham số book_id
         Input: Không có book_id
         Expected Output: HTTP 200, trả về "Manager"
         """
@@ -1264,7 +1264,7 @@ class UploadedByViewTests(APITestCase):
     def test_book_id_sai_kieu_du_lieu(self):
         """
         Test Case ID: UT-UBD-05
-        Mục tiêu: Kiểm tra khi book_id là chuỗi không hợp lệ
+        Mục tiêu: Kiểm thử khi book_id là chuỗi không hợp lệ
         Input: book_id = "abc"
         Expected Output: HTTP 200, trả về "Manager"
         """
@@ -1305,7 +1305,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_them_sach_thanh_cong(self):
         """
         Test Case ID: UT-CTR-01
-        Muc tieu: Kiem tra them sach vao danh sach doc tiep thanh cong
+        Muc tieu: Kiểm thử them sach vao danh sach doc tiep thanh cong
         Input: book_id = ID cua sach, reader_id = ID cua doc gia
         Expected Output: HTTP 200, ban ghi doc tiep duoc tao
         """
@@ -1318,7 +1318,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_them_sach_trung_lap(self):
         """
         Test Case ID: UT-CTR-02
-        Muc tieu: Kiem tra them lai sach da co trong danh sach doc tiep
+        Muc tieu: Kiểm thử them lai sach da co trong danh sach doc tiep
         Input: book_id = ID cua sach, reader_id = ID cua doc gia (da co ban ghi)
         Expected Output: HTTP 200, khong tao ban ghi moi
         """
@@ -1332,7 +1332,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_thieu_truong_bat_buoc(self):
         """
         Test Case ID: UT-CTR-03
-        Muc tieu: Kiem tra truong hop thieu truong bat buoc
+        Muc tieu: Kiểm thử truong hop thieu truong bat buoc
         Input: Chi co book_id, thieu reader_id
         Expected Output: HTTP 400, thong bao loi
         """
@@ -1343,7 +1343,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_thieu_book_id(self):
         """
         Test Case ID: UT-CTR-04
-        Mục tiêu: Kiểm tra khi thiếu book_id
+        Mục tiêu: Kiểm thử khi thiếu book_id
         Input: Chỉ có reader_id
         Expected Output: HTTP 400, thông báo lỗi
         """
@@ -1354,7 +1354,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_thieu_ca_hai_truong(self):
         """
         Test Case ID: UT-CTR-05
-        Mục tiêu: Kiểm tra khi thiếu cả hai trường bắt buộc
+        Mục tiêu: Kiểm thử khi thiếu cả hai trường bắt buộc
         Input: Không có book_id và reader_id
         Expected Output: HTTP 400
         """
@@ -1364,7 +1364,7 @@ class ContinueReadingViewTests(APITestCase):
     def test_id_khong_ton_tai(self):
         """
         Test Case ID: UT-CTR-06
-        Mục tiêu: Kiểm tra khi book_id hoặc reader_id không tồn tại
+        Mục tiêu: Kiểm thử khi book_id hoặc reader_id không tồn tại
         Input: book_id = 999, reader_id = 999
         Expected Output: HTTP 400 hoặc lỗi liên quan đến khóa ngoại
         """
@@ -1382,7 +1382,7 @@ class HomePageTests(TestCase):
     def test_truy_cap_trang_chu_thanh_cong(self):
         """
         Test Case ID: UT-HMP-01
-        Mục tiêu: Kiểm tra render trang chủ thành công
+        Mục tiêu: Kiểm thử render trang chủ thành công
         Input: GET request tới URL trang chủ
         Expected Output: HTTP 200, render template '6_home_page.html'
         """
@@ -1393,7 +1393,7 @@ class HomePageTests(TestCase):
     def test_truy_cap_trang_chu_that_bai(self):
         """
         Test Case ID: UT-HMP-02
-        Mục tiêu: Kiểm tra trường hợp truy cập trang chủ thất bại khi chưa đăng nhập (hoặc không có quyền)
+        Mục tiêu: Kiểm thử trường hợp truy cập trang chủ thất bại khi chưa đăng nhập (hoặc không có quyền)
         Input: GET request tới URL trang chủ khi chưa đăng nhập
         Expected Output: HTTP 302 (chuyển hướng đến trang đăng nhập hoặc trang lỗi)
         """
@@ -1403,13 +1403,13 @@ class HomePageTests(TestCase):
     def test_gui_post_khong_hop_le(self):
         """
         Test Case ID: UT-HMP-03
-        Mục tiêu: Kiểm tra gửi POST yêu cầu tới trang chủ với dữ liệu không hợp lệ
+        Mục tiêu: Kiểm thử gửi POST yêu cầu tới trang chủ với dữ liệu không hợp lệ
         Input: POST request với dữ liệu sai định dạng hoặc thiếu
         Expected Output: HTTP 400 (Lỗi do thiếu dữ liệu bắt buộc)
         """
         data = {'invalid_field': 'some_value'}  # Dữ liệu không hợp lệ
         response = self.client.post(self.url, data)
-        self.assertEqual(response.status_code, 400)  # Kiểm tra mã lỗi khi dữ liệu sai
+        self.assertEqual(response.status_code, 400)  # Kiểm thử mã lỗi khi dữ liệu sai
 
 class RankPageTests(TestCase):
     def setUp(self):
@@ -1420,7 +1420,7 @@ class RankPageTests(TestCase):
     def test_truy_cap_trang_xep_hang_thanh_cong(self):
         """
         Test Case ID: UT-RNK-01
-        Mục tiêu: Kiểm tra render trang xếp hạng thành công
+        Mục tiêu: Kiểm thử render trang xếp hạng thành công
         Input: GET request tới URL trang xếp hạng
         Expected Output: HTTP 200, render template '7_gamefication_page.html'
         """
@@ -1431,7 +1431,7 @@ class RankPageTests(TestCase):
     def test_truy_cap_trang_xep_hang_that_bai(self):
         """
         Test Case ID: UT-RNK-02
-        Mục tiêu: Kiểm tra trường hợp truy cập trang xếp hạng thất bại khi chưa đăng nhập (hoặc không có quyền)
+        Mục tiêu: Kiểm thử trường hợp truy cập trang xếp hạng thất bại khi chưa đăng nhập (hoặc không có quyền)
         Input: GET request tới URL trang xếp hạng khi chưa đăng nhập
         Expected Output: HTTP 302 (chuyển hướng đến trang đăng nhập hoặc trang lỗi)
         """
@@ -1442,13 +1442,13 @@ class RankPageTests(TestCase):
     def test_gui_post_khong_hop_le(self):
         """
         Test Case ID: UT-RNK-03
-        Mục tiêu: Kiểm tra gửi POST yêu cầu tới trang xếp hạng với dữ liệu không hợp lệ
+        Mục tiêu: Kiểm thử gửi POST yêu cầu tới trang xếp hạng với dữ liệu không hợp lệ
         Input: POST request với dữ liệu sai định dạng hoặc thiếu
         Expected Output: HTTP 400 (Lỗi do thiếu dữ liệu bắt buộc)
         """
         data = {'invalid_field': 'some_value'}  # Dữ liệu không hợp lệ
         response = self.client.post(self.url, data)
-        self.assertEqual(response.status_code, 400)  # Kiểm tra mã lỗi khi dữ liệu sai
+        self.assertEqual(response.status_code, 400)  # Kiểm thử mã lỗi khi dữ liệu sai
 class WishListPageTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -1457,7 +1457,7 @@ class WishListPageTests(TestCase):
     def test_truy_cap_trang_wishlist_thanh_cong(self):
         """
         Test Case ID: UT-WLP-01
-        Mục tiêu: Kiểm tra render trang wishlist thành công
+        Mục tiêu: Kiểm thử render trang wishlist thành công
         Input: GET request tới URL trang wishlist
         Expected Output: HTTP 200, render template '8_wishlist_page.html'
         """
@@ -1468,7 +1468,7 @@ class WishListPageTests(TestCase):
     def test_truy_cap_trang_wishlist_that_bai(self):
         """
         Test Case ID: UT-WLP-02
-        Mục tiêu: Kiểm tra truy cập wishlist thất bại nếu chưa đăng nhập
+        Mục tiêu: Kiểm thử truy cập wishlist thất bại nếu chưa đăng nhập
         Expected Output: HTTP 302 chuyển hướng
         """
         response = self.client.get(self.url)
@@ -1492,7 +1492,7 @@ class NotificationPageTests(TestCase):
     def test_truy_cap_trang_thong_bao_thanh_cong(self):
         """
         Test Case ID: UT-NFP-01
-        Mục tiêu: Kiểm tra render trang thông báo thành công
+        Mục tiêu: Kiểm thử render trang thông báo thành công
         Expected Output: HTTP 200, render template '9_notification_page.html'
         """
         response = self.client.get(self.url)
@@ -1502,7 +1502,7 @@ class NotificationPageTests(TestCase):
     def test_truy_cap_trang_thong_bao_that_bai(self):
         """
         Test Case ID: UT-NFP-02
-        Mục tiêu: Kiểm tra truy cập không thành công khi chưa đăng nhập
+        Mục tiêu: Kiểm thử truy cập không thành công khi chưa đăng nhập
         Expected Output: HTTP 302 redirect
         """
         response = self.client.get(self.url)
@@ -1526,7 +1526,7 @@ class MyUploadedBookPageTests(TestCase):
     def test_truy_cap_trang_sach_da_upload_thanh_cong(self):
         """
         Test Case ID: UT-MUBP-01
-        Mục tiêu: Kiểm tra render trang sách đã upload thành công
+        Mục tiêu: Kiểm thử render trang sách đã upload thành công
         Expected Output: HTTP 200, render template '10_myUploadedBook_page.html'
         """
         response = self.client.get(self.url)
@@ -1585,7 +1585,7 @@ class AddBookToWishlistTests(APITestCase):
     def test_them_sach_thanh_cong(self):
         """
         Test Case ID: UT-ABW-01
-        Muc tieu: Kiem tra them sach vao danh sach yeu thich thanh cong
+        Muc tieu: Kiểm thử them sach vao danh sach yeu thich thanh cong
         Input: book_id = ID cua sach, user_id = ID cua doc gia
         Expected Output: HTTP 200, ban ghi yeu thich duoc tao
         """
@@ -1599,7 +1599,7 @@ class AddBookToWishlistTests(APITestCase):
     def test_them_sach_trung_lap(self):
         """
         Test Case ID: UT-ABW-02
-        Muc tieu: Kiem tra them lai sach da co trong danh sach yeu thich
+        Muc tieu: Kiểm thử them lai sach da co trong danh sach yeu thich
         Input: book_id = ID cua sach, user_id = ID cua doc gia
         Expected Output: HTTP 400, sach da co trong danh sach yeu thich
         """
@@ -1613,7 +1613,7 @@ class AddBookToWishlistTests(APITestCase):
     def test_thieu_truong_bat_buoc(self):
         """
         Test Case ID: UT-ABW-03
-        Muc tieu: Kiem tra truong hop thieu truong bat buoc
+        Muc tieu: Kiểm thử truong hop thieu truong bat buoc
         Input: Chi co book_id, thieu reader_id
         Expected Output: HTTP 400, thong bao loi
         """
@@ -1625,7 +1625,7 @@ class AddBookToWishlistTests(APITestCase):
     def test_nguoi_doc_khong_ton_tai(self):
         """
         Test Case ID: UT-ABW-04
-        Muc tieu: Kiem tra them sach vao danh sach yeu thich voi nguoi doc khong ton tai
+        Muc tieu: Kiểm thử them sach vao danh sach yeu thich voi nguoi doc khong ton tai
         Input: book_id = ID cua sach, user_id = 99999 (khong ton tai)
         Expected Output: HTTP 404, Nguoi doc khong ton tai
         """
@@ -1637,7 +1637,7 @@ class AddBookToWishlistTests(APITestCase):
     def test_sach_khong_ton_tai(self):
         """
         Test Case ID: UT-ABW-05
-        Mục tiêu: Kiểm tra xử lý khi sách không tồn tại
+        Mục tiêu: Kiểm thử xử lý khi sách không tồn tại
         Input: book_id = 99999 (không tồn tại), user_id = ID hợp lệ của người dùng
         Expected Output: HTTP 404, thông báo lỗi "Book not found"
         """
@@ -1774,7 +1774,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_book_in_wishlist_thank_cong(self):
         """
         Test Case ID: UT-CIWL-001
-        Mo ta: Test kiem tra sach co trong wishlist
+        Mo ta: Test Kiểm thử sach co trong wishlist
         Input: book_id, user_id hop le, sach co trong wishlist
         Mong doi: Tra ve 200, in_wishlist=True
         """
@@ -1790,7 +1790,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_book_in_wishlist_that_bai(self):
         """
         Test Case ID: UT-CIWL-002
-        Mo ta: Test kiem tra sach khong co trong wishlist
+        Mo ta: Test Kiểm thử sach khong co trong wishlist
         Input: book_id, user_id hop le, sach khong co trong wishlist
         Mong doi: Tra ve 200, in_wishlist=False
         """
@@ -1805,7 +1805,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_voi_user_null(self):
         """
         Test Case ID: UT-CIWL-003
-        Mo ta: Test kiem tra sach khi user_id khong ton tai
+        Mo ta: Test Kiểm thử sach khi user_id khong ton tai
         Input: book_id hop le, user_id khong ton tai
         Mong doi: Tra ve 400, thong bao Reader khong ton tai
         """
@@ -1820,7 +1820,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_thieu_truong(self):
         """
         Test Case ID: UT-CIWL-004
-        Mo ta: Test kiem tra sach khi thieu tham so bat buoc
+        Mo ta: Test Kiểm thử sach khi thieu tham so bat buoc
         Input: Thieu book_id hoac user_id
         Mong doi: Tra ve 400, thong bao loi
         """
@@ -1835,7 +1835,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_with_invalid_user_id(self):
         """
         Test Case ID: UT-CIWL-005
-        Mo ta: Test kiem tra sach voi user_id khong hop le
+        Mo ta: Test Kiểm thử sach voi user_id khong hop le
         Input: user_id khong phai so nguyen, book_id hop le
         Mong doi: Tra ve 400, thong bao loi
         """
@@ -1850,7 +1850,7 @@ class CheckBookInWishlistTests(APITestCase):
     def test_check_with_invalid_book_id(self):
         """
         Test Case ID: UT-CIWL-006
-        Mo ta: Test kiem tra sach voi book_id khong hop le
+        Mo ta: Test Kiểm thử sach voi book_id khong hop le
         Input: book_id khong phai so nguyen, user_id hop le
         Mong doi: Tra ve 400, thong bao loi
         """
@@ -1983,7 +1983,7 @@ class LastThreeWishListViewTests(APITestCase):
         request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': str(self.reader.user_id)})
         response = LastThreeWishListView.as_view()(request)
 
-        # Kiểm tra kết quả
+        # Kiểm thử kết quả
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]['book_id'], self.book2.pk)  # Sách mới nhất (book2) xuất hiện trước
@@ -2000,7 +2000,7 @@ class LastThreeWishListViewTests(APITestCase):
         request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': str(self.reader.user_id)})
         response = LastThreeWishListView.as_view()(request)
 
-        # Kiểm tra kết quả
+        # Kiểm thử kết quả
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
