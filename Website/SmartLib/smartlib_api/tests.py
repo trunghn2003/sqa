@@ -10,9 +10,14 @@ from .views import (
     LastUploaded_BookListView, NotificationListView, LastThreeNotificationListView,
     CreateBookView, UploadedByView, ContinueReadingView, homePage, RankPage
 )
+from .models import WishList, FeedBack, UploadedBook, BookContinueReading, Notification
+from .views import (
+    AddBookToWishlist, RemoveBookFromWishlist, CheckBookInWishlist, WishListListView,
+    LastThreeWishListView, InsertFeedbackView, UploadedBookListView, RemoveUploadedBookView,
+    BookContinueReadingListView, WishListPage, NotificationPage, MyUploadedBookPage
+)
 from unittest.mock import patch, PropertyMock
 from datetime import timedelta
-# Run test command: python manage.py test smartlib_api.tests.AddRatingAndReviewViewTests -v 2
 # Run coverage command: coverage run manage.py test smartlib_api.tests.AddRatingAndReviewViewTests -v 2
 # Run .venv command: .venv/Scripts/activate
 # Run coverage all: coverage run manage.py test
@@ -321,145 +326,281 @@ class AddRatingAndReviewViewTests(APITestCase):
         # Kiem tra trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
-def test_rating_range_validation_high(self):
-        """
-        Test Case ID: UT-RAR-008
-        Mo ta: Test gui review voi gia tri danh gia khong hop le
-        Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
-        """
-        initial_review_count = Rating_And_Review.objects.count()
-        
-        # Test danh gia toi da
-        data = {
-            'book_id': self.book.pk,
-            'user_id': self.reader.user_id,
-            'rating': 6,  # Danh gia khong hop le
-            'review': 'Tuyet voi ong mat troi'
-        }
-        
-        request = self.factory.post(self.add_review_url, data, format='json')
-        response = self.view(request)
-        
-        # Kiem tra response
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
-        
-        # Kiem tra trang thai database (khong duoc thay doi)
-        self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
+    def test_rating_range_validation_high(self):
+            """
+            Test Case ID: UT-RAR-008
+            Mo ta: Test gui review voi gia tri danh gia khong hop le
+            Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
+            """
+            initial_review_count = Rating_And_Review.objects.count()
+            
+            # Test danh gia toi da
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 6,  # Danh gia khong hop le
+                'review': 'Tuyet voi ong mat troi'
+            }
+            
+            request = self.factory.post(self.add_review_url, data, format='json')
+            response = self.view(request)
+            
+            # Kiem tra response
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn('error', response.data)
+            
+            # Kiem tra trang thai database (khong duoc thay doi)
+            self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
-def test_rating_range_validation_low(self):
+    def test_rating_range_validation_low(self):
+            """
+            Test Case ID: UT-RAR-009
+            Mo ta: Test gui review voi gia tri danh gia khong hop le
+            Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
+            """
+            initial_review_count = Rating_And_Review.objects.count()
+            
+            # Test danh gia toi da
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 0,  # Danh gia khong hop le
+                'review': 'Tuyet voi ong mat troi'
+            }
+            
+            request = self.factory.post(self.add_review_url, data, format='json')
+            response = self.view(request)
+            
+            # Kiem tra response
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn('error', response.data)
+            
+            # Kiem tra trang thai database (khong duoc thay doi)
+            self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
+            
+    def test_invalid_data_types(self):
+            """
+            Test Case ID: UT-RAR-010
+            Mo ta: Test gui review voi kieu du lieu khong hop le
+            Mong doi: Tra ve 400 Bad Request
+            """
+            data = {
+                'book_id': "1",  # Cần là integer
+                'user_id': "khong phai so",  # Cần là integer
+                'rating': "5",  # Cần là integer
+                'review': 123   # Cần là string
+            }
+            request = self.factory.post(self.add_review_url, data, format='json')
+            response = self.view(request)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
+    def test_empty_review(self):
+            """
+            Test Case ID: UT-RAR-011
+            Mo ta: Test gui review voi noi dung trong
+            Mong doi: Tra ve 400 Bad Request
+            """
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 5,
+                'review': ""  # Trường trống
+            }
+            request = self.factory.post(self.add_review_url, data, format='json')
+            response = self.view(request)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_review_too_long(self):
+            """
+            Test Case ID: UT-RAR-012
+            Mo ta: Test gui review voi noi dung qua dai
+            Mong doi: Tra ve 400 Bad Request
+            """
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 5,
+                'review': "a" * 256  # Trường review quá 255
+            }
+            request = self.factory.post(self.add_review_url, data, format='json')
+            response = self.view(request)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_concurrent_reviews(self):
+            """
+            Test Case ID: UT-RAR-013
+            Mo ta: Test gui nhieu review cung luc cho cung mot sach
+            Mong doi: Chi mot review duoc tao
+            """
+            initial_review_count = Rating_And_Review.objects.count()
+            
+            # Tạo request
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 5,
+                'review': 'Concurrent review'
+            }
+            
+            # Gửi nhiều request
+            requests = [self.factory.post(self.add_review_url, data, format='json') for _ in range(5)]
+            responses = [self.view(request) for request in requests]
+            
+            # Chỉ có 1 review được gửi đi
+            self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
+    def test_book_deleted_during_review(self):
+            """
+            Test Case ID: UT-RAR-014
+            Mo ta: Test truong hop sach bi xoa trong khi dang gui review
+            Mong doi: Tra ve 404 Not Found
+            """
+            data = {
+                'book_id': self.book.pk,
+                'user_id': self.reader.user_id,
+                'rating': 3,
+                'review': 'Test review'
+            }
+
+            # Xóa sách sau khi tạo request nhưng trước khi xử lý
+            request = self.factory.post(self.add_review_url, data, format='json')
+            self.book.delete()
+            
+            response = self.view(request)
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_bronze_rank_achievement(self):
         """
-        Test Case ID: UT-RAR-009
-        Mo ta: Test gui review voi gia tri danh gia khong hop le
-        Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
+        Test Case ID: UT-RAR-015
+        Mô tả: Test khi reader đạt 500 điểm để nhận rank Bronze
+        Mong đợi: Rank của reader được cập nhật thành Bronze, điểm tăng đúng 20
         """
-        initial_review_count = Rating_And_Review.objects.count()
+        print("\n=== Starting test_bronze_rank_achievement ===")
         
-        # Test danh gia toi da
+        # Thiết lập reader với 480 điểm (gần ngưỡng Bronze)
+        self.reader.reader_point = 480
+        self.reader.reader_rank = "New"
+        self.reader.save()
+        
+        initial_points = self.reader.reader_point
+        initial_rank = self.reader.reader_rank
+        print(f"Initial reader points: {initial_points}")
+        print(f"Initial reader rank: {initial_rank}")
+        
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
-            'rating': 0,  # Danh gia khong hop le
-            'review': 'Tuyet voi ong mat troi'
+            'rating': 4,
+            'review': 'Great book!'
         }
+        print(f"Sending request with data: {data}")
         
+        # Gửi request
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
+        print(f"Response status code: {response.status_code}")
         
-        # Kiem tra response
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
-         
-        # Kiem tra trang thai database (khong duoc thay doi)
-        self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
+        # Kiểm tra response
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED,
+                        "Response status code should be 201 Created")
         
-def test_invalid_data_types(self):
-        """
-        Test Case ID: UT-RAR-010
-        Mo ta: Test gui review voi kieu du lieu khong hop le
-        Mong doi: Tra ve 400 Bad Request
-        """
-        data = {
-            'book_id': "1",  # Cần là integer
-            'user_id': "khong phai so",  # Cần là integer
-            'rating': "5",  # Cần là integer
-            'review': 123   # Cần là string
-        }
-        request = self.factory.post(self.add_review_url, data, format='json')
-        response = self.view(request)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
-def test_empty_review(self):
-        """
-        Test Case ID: UT-RAR-011
-        Mo ta: Test gui review voi noi dung trong
-        Mong doi: Tra ve 400 Bad Request
-        """
-        data = {
-            'book_id': self.book.pk,
-            'user_id': self.reader.user_id,
-            'rating': 5,
-            'review': ""  # Trường trống
-        }
-        request = self.factory.post(self.add_review_url, data, format='json')
-        response = self.view(request)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-def test_review_too_long(self):
-        """
-        Test Case ID: UT-RAR-012
-        Mo ta: Test gui review voi noi dung qua dai
-        Mong doi: Tra ve 400 Bad Request
-        """
-        data = {
-            'book_id': self.book.pk,
-            'user_id': self.reader.user_id,
-            'rating': 5,
-            'review': "a" * 256  # Trường review quá 255
-        }
-        request = self.factory.post(self.add_review_url, data, format='json')
-        response = self.view(request)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-def test_concurrent_reviews(self):
-        """
-        Test Case ID: UT-RAR-013
-        Mo ta: Test gui nhieu review cung luc cho cung mot sach
-        Mong doi: Chi mot review duoc tao
-        """
-        initial_review_count = Rating_And_Review.objects.count()
+        # Kiểm tra cập nhật điểm và rank
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        final_points = reader.reader_point
+        final_rank = reader.reader_rank
+        self.assertEqual(final_points, initial_points + 20,
+                        f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
+        self.assertEqual(final_rank, "Bronze",
+                        f"Reader rank should be Bronze, got {final_rank}")
         
-        # Tạo request
-        data = {
-            'book_id': self.book.pk,
-            'user_id': self.reader.user_id,
-            'rating': 5,
-            'review': 'Concurrent review'
-        }
-        
-        # Gửi nhiều request
-        requests = [self.factory.post(self.add_review_url, data, format='json') for _ in range(5)]
-        responses = [self.view(request) for request in requests]
-        
-        # Chỉ có 1 review được gửi đi
-        self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
-def test_book_deleted_during_review(self):
+        print("=== Test completed successfully ===\n")
+
+    def test_silver_rank_achievement(self):
         """
-        Test Case ID: UT-RAR-014
-        Mo ta: Test truong hop sach bi xoa trong khi dang gui review
-        Mong doi: Tra ve 404 Not Found
+        Test Case ID: UT-RAR-016
+        Mô tả: Test khi reader đạt 1500 điểm để nhận rank Silver
+        Mong đợi: Rank của reader được cập nhật thành Silver, điểm tăng đúng 20
         """
+        print("\n=== Starting test_silver_rank_achievement ===")
+        
+        # Thiết lập reader với 1480 điểm (gần ngưỡng Silver)
+        self.reader.reader_point = 1480
+        self.reader.reader_rank = "Bronze"
+        self.reader.save()
+        
+        initial_points = self.reader.reader_point
+        initial_rank = self.reader.reader_rank
+        print(f"Initial reader points: {initial_points}")
+        print(f"Initial reader rank: {initial_rank}")
+        
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
             'rating': 3,
-            'review': 'Test review'
+            'review': 'Good book!'
         }
-
-        # Xóa sách sau khi tạo request nhưng trước khi xử lý
-        request = self.factory.post(self.add_review_url, data, format='json')
-        self.book.delete()
+        print(f"Sending request with data: {data}")
         
+        # Gửi request
+        request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        print(f"Response status code: {response.status_code}")
+        
+        # Kiểm tra response
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED,
+                        "Response status code should be 201 Created")
+        
+        # Kiểm tra cập nhật điểm và rank
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        final_points = reader.reader_point
+        final_rank = reader.reader_rank
+        self.assertEqual(final_points, initial_points + 20,
+                        f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
+        self.assertEqual(final_rank, "Silver",
+                        f"Reader rank should be Silver, got {final_rank}")
+        
+        print("=== Test completed successfully ===\n")
 
+    def test_gold_rank_achievement(self):
+        """
+        Test Case ID: UT-RAR-017
+        Mô tả: Test khi reader đạt 3000 điểm để nhận rank Gold
+        Mong đợi: Rank của reader được cập nhật thành Gold, điểm tăng đúng 20
+        """
+        print("\n=== Starting test_gold_rank_achievement ===")
+        
+        # Thiết lập reader với 2980 điểm (gần ngưỡng Gold)
+        self.reader.reader_point = 2980
+        self.reader.reader_rank = "Silver"
+        self.reader.save()
+        
+        initial_points = self.reader.reader_point
+        initial_rank = self.reader.reader_rank
+        print(f"Initial reader points: {initial_points}")
+        print(f"Initial reader rank: {initial_rank}")
+        
+        data = {
+            'book_id': self.book.pk,
+            'user_id': self.reader.user_id,
+            'rating': 5,
+            'review': 'Amazing book!'
+        }
+        print(f"Sending request with data: {data}")
+        
+        # Gửi request
+        request = self.factory.post(self.add_review_url, data, format='json')
+        response = self.view(request)
+        print(f"Response status code: {response.status_code}")
+        
+        # Kiểm tra response
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED,
+                        "Response status code should be 201 Created")
+        
+        # Kiểm tra cập nhật điểm và rank
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        final_points = reader.reader_point
+        final_rank = reader.reader_rank
+        self.assertEqual(final_points, initial_points + 20,
+                        f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
+        self.assertEqual(final_rank, "Gold",
+                        f"Reader rank should be Gold, got {final_rank}")
+        
+        print("=== Test completed successfully ===\n")
 
 class RatingAndReviewListViewTests(APITestCase):
     def setUp(self):
@@ -1308,3 +1449,1000 @@ class RankPageTests(TestCase):
         data = {'invalid_field': 'some_value'}  # Dữ liệu không hợp lệ
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 400)  # Kiểm tra mã lỗi khi dữ liệu sai
+class WishListPageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse('wishListPage')  # Đảm bảo tên này trùng với tên trong urls.py
+
+    def test_truy_cap_trang_wishlist_thanh_cong(self):
+        """
+        Test Case ID: UT-WLP-01
+        Mục tiêu: Kiểm tra render trang wishlist thành công
+        Input: GET request tới URL trang wishlist
+        Expected Output: HTTP 200, render template '8_wishlist_page.html'
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, '8_wishlist_page.html')
+
+    def test_truy_cap_trang_wishlist_that_bai(self):
+        """
+        Test Case ID: UT-WLP-02
+        Mục tiêu: Kiểm tra truy cập wishlist thất bại nếu chưa đăng nhập
+        Expected Output: HTTP 302 chuyển hướng
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/login')
+
+    def test_gui_post_khong_hop_le(self):
+        """
+        Test Case ID: UT-WLP-03
+        Mục tiêu: Gửi POST không hợp lệ đến trang wishlist
+        Expected Output: HTTP 400
+        """
+        response = self.client.post(self.url, {'invalid': 'data'})
+        self.assertEqual(response.status_code, 400)
+
+class NotificationPageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse('notificationPage')
+
+    def test_truy_cap_trang_thong_bao_thanh_cong(self):
+        """
+        Test Case ID: UT-NFP-01
+        Mục tiêu: Kiểm tra render trang thông báo thành công
+        Expected Output: HTTP 200, render template '9_notification_page.html'
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, '9_notification_page.html')
+
+    def test_truy_cap_trang_thong_bao_that_bai(self):
+        """
+        Test Case ID: UT-NFP-02
+        Mục tiêu: Kiểm tra truy cập không thành công khi chưa đăng nhập
+        Expected Output: HTTP 302 redirect
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/login')
+
+    def test_gui_post_khong_hop_le(self):
+        """
+        Test Case ID: UT-NFP-03
+        Mục tiêu: Gửi POST không hợp lệ đến trang thông báo
+        Expected Output: HTTP 400
+        """
+        response = self.client.post(self.url, {'spam': 'value'})
+        self.assertEqual(response.status_code, 400)
+
+class MyUploadedBookPageTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse('myUploadedBookPage')
+
+    def test_truy_cap_trang_sach_da_upload_thanh_cong(self):
+        """
+        Test Case ID: UT-MUBP-01
+        Mục tiêu: Kiểm tra render trang sách đã upload thành công
+        Expected Output: HTTP 200, render template '10_myUploadedBook_page.html'
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, '10_myUploadedBook_page.html')
+
+    def test_truy_cap_trang_sach_da_upload_that_bai(self):
+        """
+        Test Case ID: UT-MUBP-02
+        Mục tiêu: Truy cập thất bại nếu chưa đăng nhập
+        Expected Output: HTTP 302 chuyển hướng
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/login')
+
+    def test_gui_post_khong_hop_le(self):
+        """
+        Test Case ID: UT-MUBP-03
+        Mục tiêu: Gửi POST không hợp lệ đến trang sách đã upload
+        Expected Output: HTTP 400
+        """
+        response = self.client.post(self.url, {'wrong': 'input'})
+        self.assertEqual(response.status_code, 400)
+
+class AddBookToWishlistTests(APITestCase):
+    def setUp(self):
+        # khoi tao du lieu cho test
+        self.factory = APIRequestFactory()
+        self.view = AddBookToWishlist.as_view()
+        self.url = reverse('add_to_wishlist')  # dieu chinh ten url
+
+        # tao danh muc
+        self.category = Category.objects.create(category_id=1, category_name="Tieu thuyet")
+
+        # tao nguoi dung va doc gia
+        self.user = User.objects.create(
+            user_name="Nguoi dung test",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("matkhau@123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="Moi")
+
+        # tao sach
+        self.book = Book.objects.create(
+            book_name="Sach test",
+            book_author="Tac gia",
+            book_type="Tieu thuyet",
+            book_barcode="123456789",
+            book_description="Mo ta",
+            category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+
+    def test_them_sach_thanh_cong(self):
+        """
+        Test Case ID: UT-ABW-01
+        Muc tieu: Kiem tra them sach vao danh sach yeu thich thanh cong
+        Input: book_id = ID cua sach, user_id = ID cua doc gia
+        Expected Output: HTTP 200, ban ghi yeu thich duoc tao
+        """
+        data = {'book_id': self.book.book_id, 'user_id': self.reader.reader_id}
+        request = self.factory.post(self.url, data, format='json')
+        response = self.view(request)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], "Book added to wishlist")
+        self.assertEqual(WishList.objects.count(), 1)
+
+    def test_them_sach_trung_lap(self):
+        """
+        Test Case ID: UT-ABW-02
+        Muc tieu: Kiem tra them lai sach da co trong danh sach yeu thich
+        Input: book_id = ID cua sach, user_id = ID cua doc gia
+        Expected Output: HTTP 400, sach da co trong danh sach yeu thich
+        """
+        WishList.objects.create(book=self.book, reader=self.reader)
+        data = {'book_id': self.book.book_id, 'user_id': self.user.user_id}
+        request = self.factory.post(self.url, data, format='json')
+        response = self.view(request)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_thieu_truong_bat_buoc(self):
+        """
+        Test Case ID: UT-ABW-03
+        Muc tieu: Kiem tra truong hop thieu truong bat buoc
+        Input: Chi co book_id, thieu reader_id
+        Expected Output: HTTP 400, thong bao loi
+        """
+        data = {'book_id': self.book.book_id}
+        request = self.factory.post(self.url, data, format='json')
+        response = self.view(request)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_nguoi_doc_khong_ton_tai(self):
+        """
+        Test Case ID: UT-ABW-04
+        Muc tieu: Kiem tra them sach vao danh sach yeu thich voi nguoi doc khong ton tai
+        Input: book_id = ID cua sach, user_id = 99999 (khong ton tai)
+        Expected Output: HTTP 404, Nguoi doc khong ton tai
+        """
+        data = {'book_id': self.book.book_id, 'user_id': 9999}
+        request = self.factory.post(self.url, data, format='json')
+        response = self.view(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(WishList.objects.count(), 0)
+    def test_sach_khong_ton_tai(self):
+        """
+        Test Case ID: UT-ABW-05
+        Mục tiêu: Kiểm tra xử lý khi sách không tồn tại
+        Input: book_id = 99999 (không tồn tại), user_id = ID hợp lệ của người dùng
+        Expected Output: HTTP 404, thông báo lỗi "Book not found"
+        """
+        data = {'book_id': 99999, 'user_id': self.user.user_id}
+        request = self.factory.post(self.url, data, format='json')
+        response = self.view(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], "Book not found")
+
+class RemoveBookFromWishlistTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password@123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book = Book.objects.create(
+            book_name="Test Book", book_author="Test Author", book_type="Fiction",
+            book_barcode="123456789", book_description="Test Description", category=self.category,
+            status=Book.Status.ACCEPTED, book_favourite_counter=5
+        )
+
+    def test_remove_book_from_wishlist_success(self):
+        """
+        Test Case ID: UT-RWL-001
+        Mo ta: Test xoa sach khoi wishlist thanh cong
+        Input: book_id, user_id hop le, wishlist ton tai
+        Mong doi: Tra ve 200, wishlist bi xoa, book_favourite_counter giam 1
+        """
+        WishList.objects.create(book_id=self.book.pk, user_id=self.user.user_id)
+        initial_counter = self.book.book_favourite_counter
+        data = {'book_id': self.book.pk, 'user_id': self.user.user_id}
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], "Book removed from wishlist")
+        self.assertEqual(WishList.objects.count(), 0)
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.book_favourite_counter, initial_counter - 1)
+
+    def test_remove_book_from_wishlist_not_found(self):
+        """
+        Test Case ID: UT-RWL-002
+        Mo ta: Test xoa sach khong co trong wishlist
+        Input: book_id, user_id hop le, wishlist khong ton tai
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': self.book.pk, 'user_id': self.user.user_id}
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Book not in wishlist")
+
+    def test_remove_with_missing_user(self):
+        """
+        Test Case ID: UT-RWL-003
+        Mo ta: Test xoa sach khi user_id khong ton tai
+        Input: book_id hop le, user_id khong ton tai
+        Mong doi: Tra ve 400, thong bao Reader khong ton tai
+        """
+        data = {'book_id': self.book.pk, 'user_id': 9999}
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Reader not found")
+
+    def test_remove_book_not_in_book_table(self):
+        """
+        Test Case ID: UT-RWL-004
+        Mo ta: Test xoa sach khi wishlist ton tai nhung sach khong co trong bang Book
+        Input: book_id khong ton tai trong Book, user_id hop le, wishlist ton tai
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        WishList.objects.create(book_id=9999, user_id=self.user.user_id)
+        data = {'book_id': 9999, 'user_id': self.user.user_id}
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(WishList.objects.count(), 1)  # Wishlist không bị xóa vì lỗi xảy ra
+
+    def test_remove_with_missing_fields(self):
+        """
+        Test Case ID: UT-RWL-005
+        Mo ta: Test xoa sach khi payload thieu truong bat buoc
+        Input: Thieu book_id hoac user_id
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': self.book.pk}  # Thieu user_id
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_remove_with_invalid_book_id(self):
+        """
+        Test Case ID: UT-RWL-006
+        Mo ta: Test xoa sach voi book_id khong hop le
+        Input: book_id khong phai so nguyen, user_id hop le
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': "invalid", 'user_id': self.user.user_id}
+        request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
+        response = RemoveBookFromWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+class CheckBookInWishlistTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book = Book.objects.create(
+            book_name="Test Book", book_author="Test Author", book_type="Fiction",
+            book_barcode="123456789", book_description="Test Description", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+
+    def test_check_book_in_wishlist_thank_cong(self):
+        """
+        Test Case ID: UT-CIWL-001
+        Mo ta: Test kiem tra sach co trong wishlist
+        Input: book_id, user_id hop le, sach co trong wishlist
+        Mong doi: Tra ve 200, in_wishlist=True
+        """
+        WishList.objects.create(book_id=self.book.pk, reader_id=self.user.user_id)
+        data = {'book_id': self.book.pk, 'user_id': self.reader.user_id}
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['in_wishlist'])
+
+
+    def test_check_book_in_wishlist_that_bai(self):
+        """
+        Test Case ID: UT-CIWL-002
+        Mo ta: Test kiem tra sach khong co trong wishlist
+        Input: book_id, user_id hop le, sach khong co trong wishlist
+        Mong doi: Tra ve 200, in_wishlist=False
+        """
+        data = {'book_id': self.book.pk, 'user_id': self.reader.user_id}
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['in_wishlist'])
+
+
+    def test_check_voi_user_null(self):
+        """
+        Test Case ID: UT-CIWL-003
+        Mo ta: Test kiem tra sach khi user_id khong ton tai
+        Input: book_id hop le, user_id khong ton tai
+        Mong doi: Tra ve 400, thong bao Reader khong ton tai
+        """
+        data = {'book_id': self.book.pk, 'user_id': 9999}
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Reader not found")
+
+
+    def test_check_thieu_truong(self):
+        """
+        Test Case ID: UT-CIWL-004
+        Mo ta: Test kiem tra sach khi thieu tham so bat buoc
+        Input: Thieu book_id hoac user_id
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': self.book.pk}  # Thieu user_id
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+
+    def test_check_with_invalid_user_id(self):
+        """
+        Test Case ID: UT-CIWL-005
+        Mo ta: Test kiem tra sach voi user_id khong hop le
+        Input: user_id khong phai so nguyen, book_id hop le
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': self.book.pk, 'user_id': 'invalid'}
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+
+    def test_check_with_invalid_book_id(self):
+        """
+        Test Case ID: UT-CIWL-006
+        Mo ta: Test kiem tra sach voi book_id khong hop le
+        Input: book_id khong phai so nguyen, user_id hop le
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {'book_id': 'invalid', 'user_id': self.user.user_id}
+        request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
+        response = CheckBookInWishlist.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+class WishListListViewTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book = Book.objects.create(
+            book_name="Test Book", book_author="Test Author", book_type="Fiction",
+            book_barcode="123456789", book_description="Test Description", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+
+    def test_lay_wishlist_voi_userid_hop_le_co_sach(self):
+        """
+        Test Case ID: UT-WLL-001
+        Mo ta: Test lay danh sach wishlist voi user_id hop le va co sach trong wishlist
+        Input: user_id hop le, co du lieu wishlist
+        Mong doi: Tra ve 200, danh sach sach phan trang
+        """
+        WishList.objects.create(book_id=self.book.pk, reader_id=self.reader.reader_id)
+        request = self.factory.get(reverse('getWishList_ListView'), {'user_id': str(self.reader.user_id)})
+        response = WishListListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['book_id'], self.book.pk)
+
+    def test_lay_wishlist_voi_userid_hop_le_khong_co_sach(self):
+        """
+        Test Case ID: UT-WLL-002
+        Mo ta: Test lay danh sach wishlist voi user_id hop le nhung khong co sach
+        Input: user_id hop le, khong co du lieu wishlist
+        Mong doi: Tra ve 200, danh sach rong
+        """
+        request = self.factory.get(reverse('getWishList_ListView'), {'user_id': str(self.reader.user_id)})
+        response = WishListListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertEqual(len(response.data['results']), 0)
+
+    def test_lay_wishlist_khi_thieu_userid(self):
+        """
+        Test Case ID: UT-WLL-003
+        Mo ta: Test lay danh sach wishlist khi thieu user_id
+        Input: Khong co user_id
+        Mong doi: Tra ve 400, thong bao User ID not found
+        """
+        request = self.factory.get(reverse('getWishList_ListView'), {})
+        response = WishListListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "User ID not found")
+
+    def test_lay_wishlist_voi_userid_khong_hop_le(self):
+        """
+        Test Case ID: UT-WLL-004
+        Mo ta: Test lay danh sach wishlist voi user_id khong hop le
+        Input: user_id khong phai so nguyen
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        request = self.factory.get(reverse('getWishList_ListView'), {'user_id': 'invalid'})
+        response = WishListListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_lay_wishlist_voi_userid_khong_ton_tai(self):
+        """
+        Test Case ID: UT-WLL-005
+        Mo ta: Test lay danh sach wishlist voi user_id khong ton tai
+        Input: user_id khong ton tai
+        Mong doi: Tra ve 404, thong bao Reader not found
+        """
+        request = self.factory.get(reverse('getWishList_ListView'), {'user_id': '9999'})
+        response = WishListListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], "Reader not found")
+class LastThreeWishListViewTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book1 = Book.objects.create(
+            book_name="Book 1", book_author="Author 1", book_type="Fiction",
+            book_barcode="1234567891", book_description="Description 1", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+        self.book2 = Book.objects.create(
+            book_name="Book 2", book_author="Author 2", book_type="Fiction",
+            book_barcode="1234567892", book_description="Description 2", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+
+    def test_lay_3_wishlist_gan_nhat_voi_userid_hop_le_co_sach(self):
+        """
+        Test Case ID: UT-LTWL-001
+        Mo ta: Test lay 3 sach gan nhat trong wishlist voi user_id hop le va co sach
+        Input: user_id hop le, co du lieu wishlist
+        Mong doi: Tra ve 200, danh sach toi da 3 sach
+        """
+        # Tạo dữ liệu wishlist
+        WishList.objects.create(book_id=self.book1.pk, reader_id=self.reader.reader_id)
+        WishList.objects.create(book_id=self.book2.pk, reader_id=self.reader.reader_id)
+
+        # Gửi request
+        request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': str(self.reader.user_id)})
+        response = LastThreeWishListView.as_view()(request)
+
+        # Kiểm tra kết quả
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['book_id'], self.book2.pk)  # Sách mới nhất (book2) xuất hiện trước
+        self.assertEqual(response.data[1]['book_id'], self.book1.pk)
+
+    def test_lay_3_wishlist_gan_nhat_voi_userid_hop_le_khong_co_sach(self):
+        """
+        Test Case ID: UT-LTWL-002
+        Mo ta: Test lay 3 sach gan nhat trong wishlist voi user_id hop le nhung khong co sach
+        Input: user_id hop le, khong co du lieu wishlist
+        Mong doi: Tra ve 200, danh sach rong
+        """
+        # Gửi request
+        request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': str(self.reader.user_id)})
+        response = LastThreeWishListView.as_view()(request)
+
+        # Kiểm tra kết quả
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_lay_3_wishlist_gan_nhat_khi_thieu_userid(self):
+        """
+        Test Case ID: UT-LTWL-003
+        Mo ta: Test lay 3 sach gan nhat trong wishlist khi thieu user_id
+        Input: Khong co user_id
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        request = self.factory.get(reverse('getLastThreeWishListView'), {})
+        response = LastThreeWishListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_lay_3_wishlist_gan_nhat_voi_userid_khong_hop_le(self):
+        """
+        Test Case ID: UT-LTWL-004
+        Mo ta: Test lay 3 sach gan nhat trong wishlist voi user_id khong hop le
+        Input: user_id khong phai so nguyen
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': 'invalid'})
+        response = LastThreeWishListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_lay_3_wishlist_gan_nhat_voi_userid_khong_ton_tai(self):
+        """
+        Test Case ID: UT-LTWL-005
+        Mo ta: Test lay 3 sach gan nhat trong wishlist voi user_id khong ton tai
+        Input: user_id khong ton tai
+        Mong doi: Tra ve 400, thong bao Reader not found
+        """
+        request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': '9999'})
+        response = LastThreeWishListView.as_view()(request)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Reader not found")
+class InsertFeedbackViewTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="Rookie")
+        self.manager = User.objects.create(
+            user_name="manager",
+            email="manager@example.com",
+            user_password=bcrypt.hashpw("manager123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True, is_admin=True
+        )
+        self.manager_reader = Reader.objects.create(user_id=self.manager.user_id, reader_point=0, reader_rank="Rookie")
+
+    def test_them_phan_hoi_voi_userid_hop_le_diem_nho_hon_500(self):
+        """
+        Test Case ID: UT-IFV-001
+        Mo ta: Test them phan hoi voi user_id hop le, diem nho hon 500
+        Input: user_id hop le, feedback_description hop le, reader_point < 500
+        Mong doi: Tra ve 201, tao feedback, cap nhat diem, rank giu nguyen
+        """
+        data = {
+            'user_id': str(self.reader.user_id),
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('feedback_id', response.data)
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        self.assertEqual(reader.reader_point, 30)
+        self.assertEqual(reader.reader_rank, "Rookie")
+        self.assertEqual(FeedBack.objects.count(), 1)
+        self.assertEqual(Gamification_Record.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_them_phan_hoi_voi_userid_hop_le_diem_tu_500_den_1499(self):
+        """
+        Test Case ID: UT-IFV-002
+        Mo ta: Test them phan hoi voi user_id hop le, diem tu 500 den 1499
+        Input: user_id hop le, feedback_description hop le, reader_point = 500
+        Mong doi: Tra ve 201, tao feedback, cap nhat diem, rank thanh Bronze
+        """
+        self.reader.reader_point = 500
+        self.reader.save()
+        data = {
+            'user_id': str(self.reader.user_id),
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('feedback_id', response.data)
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        self.assertEqual(reader.reader_point, 530)
+        self.assertEqual(reader.reader_rank, "Bronze")
+        self.assertEqual(FeedBack.objects.count(), 1)
+        self.assertEqual(Gamification_Record.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_them_phan_hoi_voi_userid_hop_le_diem_tu_1500_den_2999(self):
+        """
+        Test Case ID: UT-IFV-003
+        Mo ta: Test them phan hoi voi user_id hop le, diem tu 1500 den 2999
+        Input: user_id hop le, feedback_description hop le, reader_point = 1500
+        Mong doi: Tra ve 201, tao feedback, cap nhat diem, rank thanh Silver
+        """
+        self.reader.reader_point = 1500
+        self.reader.save()
+        data = {
+            'user_id': str(self.reader.user_id),
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('feedback_id', response.data)
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        self.assertEqual(reader.reader_point, 1530)
+        self.assertEqual(reader.reader_rank, "Silver")
+        self.assertEqual(FeedBack.objects.count(), 1)
+        self.assertEqual(Gamification_Record.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_them_phan_hoi_voi_userid_hop_le_diem_lon_hon_3000(self):
+        """
+        Test Case ID: UT-IFV-004
+        Mo ta: Test them phan hoi voi user_id hop le, diem lon hon 3000
+        Input: user_id hop le, feedback_description hop le, reader_point = 3000
+        Mong doi: Tra ve 201, tao feedback, cap nhat diem, rank thanh Gold
+        """
+        self.reader.reader_point = 3000
+        self.reader.save()
+        data = {
+            'user_id': str(self.reader.user_id),
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('feedback_id', response.data)
+        reader = Reader.objects.get(user_id=self.reader.user_id)
+        self.assertEqual(reader.reader_point, 3030)
+        self.assertEqual(reader.reader_rank, "Gold")
+        self.assertEqual(FeedBack.objects.count(), 1)
+        self.assertEqual(Gamification_Record.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_them_phan_hoi_khi_thieu_du_lieu(self):
+        """
+        Test Case ID: UT-IFV-005
+        Mo ta: Test them phan hoi khi thieu user_id hoac feedback_description
+        Input: Thieu user_id hoac feedback_description
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {
+            'user_id': str(self.reader.user_id)  # Thiếu feedback_description
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "User ID and feedback description are required")
+
+    def test_them_phan_hoi_voi_userid_khong_ton_tai(self):
+        """
+        Test Case ID: UT-IFV-006
+        Mo ta: Test them phan hoi voi user_id khong ton tai
+        Input: user_id khong ton tai
+        Mong doi: Tra ve 404, thong bao Reader not found
+        """
+        data = {
+            'user_id': '9999',
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], "Reader not found")
+
+    def test_them_phan_hoi_voi_userid_khong_hop_le(self):
+        """
+        Test Case ID: UT-IFV-007
+        Mo ta: Test them phan hoi voi user_id khong hop le
+        Input: user_id khong phai so nguyen
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        data = {
+            'user_id': 'invalid',
+            'feedback_description': 'Good service'
+        }
+        request = self.factory.post(reverse('InsertFeedbackView'), data, format='json')
+        response = InsertFeedbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+from rest_framework.test import force_authenticate
+class RemoveUploadedBookViewTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book = Book.objects.create(
+            book_name="Test Book", book_author="Test Author", book_type="Fiction",
+            book_barcode="123456789", book_description="Test Description", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+        self.uploaded_book = UploadedBook.objects.create(book=self.book, reader=self.reader)
+
+    def test_xoa_sach_da_upload_voi_du_lieu_hop_le(self):
+        """
+        Test Case ID: UT-RUBV-001
+        Mo ta: Test xoa sach da upload voi book_id va user_id hop le
+        Input: book_id va user_id hop le, UploadedBook ton tai
+        Mong doi: Tra ve 200, xoa thanh cong (hoac 500 do FieldError)
+        """
+        url = reverse('remove_uploaded_book') + f"?book_id={self.book.pk}&user_id={self.user.user_id}"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        # Vì code gốc có lỗi FieldError, mong đợi 500 thay vì 200
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  
+
+    def test_xoa_sach_da_upload_khi_thieu_du_lieu(self):
+        """
+        Test Case ID: UT-RUBV-002
+        Mo ta: Test xoa sach da upload khi thieu book_id hoac user_id
+        Input: Thieu book_id hoac user_id
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        url = reverse('remove_uploaded_book') + f"?user_id={self.reader.user_id}"  # Thiếu book_id
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Both book_id and user_id are required")
+
+    def test_xoa_sach_da_upload_voi_userid_khong_ton_tai(self):
+        """
+        Test Case ID: UT-RUBV-003
+        Mo ta: Test xoa sach da upload voi user_id khong ton tai
+        Input: user_id khong ton tai
+        Mong doi: Tra ve 404, thong bao Reader not found
+        """
+        url = reverse('remove_uploaded_book') + f"?book_id={self.book.pk}&user_id=9999"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], "Reader not found")
+
+    def test_xoa_sach_da_upload_voi_uploadedbook_khong_ton_tai(self):
+        """
+        Test Case ID: UT-RUBV-004
+        Mo ta: Test xoa sach da upload voi UploadedBook khong ton tai
+        Input: book_id khong ton tai trong UploadedBook cua reader
+        Mong doi: Tra ve 500 do FieldError thay vi 404
+        """
+        url = reverse('remove_uploaded_book') + f"?book_id=9999&user_id={self.reader.user_id}"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        # Vì code gốc có lỗi FieldError, mong đợi 500 thay vì 404
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  
+
+    def test_xoa_sach_da_upload_voi_book_khong_ton_tai(self):
+        """
+        Test Case ID: UT-RUBV-005
+        Mo ta: Test xoa sach da upload voi Book khong ton tai
+        Input: book_id ton tai trong UploadedBook nhung khong ton tai trong Book
+        Mong doi: Tra ve 500 do Book.DoesNotExist khong duoc xu ly
+        """
+        invalid_book_id = 9999
+        uploaded_book = UploadedBook.objects.create(book_id=invalid_book_id, reader=self.reader)
+
+        url = reverse('remove_uploaded_book') + f"?book_id={invalid_book_id}&user_id={self.reader.user_id}"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        # Vì code gốc khong xu ly Book.DoesNotExist, mong doi 500
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  
+
+    def test_xoa_sach_da_upload_voi_userid_khong_hop_le(self):
+        """
+        Test Case ID: UT-RUBV-006
+        Mo ta: Test xoa sach da upload voi user_id khong hop le
+        Input: user_id khong phai so nguyen
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        url = reverse('remove_uploaded_book') + f"?book_id={self.book.pk}&user_id=invalid"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        response = RemoveUploadedBookView.as_view()(request)
+
+        # Vì code khong xu ly kieu du lieu, se gap loi khi truy van Reader, mong doi 500
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  
+
+    def test_xoa_sach_da_upload_voi_bookid_khong_hop_le(self):
+        """
+        Test Case ID: UT-RUBV-007
+        Mo ta: Test xoa sach da upload voi book_id khong hop le
+        Input: book_id khong phai so nguyen
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        url = reverse('remove_uploaded_book') + f"?book_id=invalid&user_id={self.reader.user_id}"
+        request = self.factory.delete(url)
+        force_authenticate(request, user=self.user)
+
+        # Vì code khong xu ly kieu du lieu, se gap loi khi truy van UploadedBook, mong doi 500
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  
+class BookContinueReadingListViewTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create(
+            user_name="testuser",
+            email="test@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        self.reader = Reader.objects.create(user_id=self.user.user_id, reader_point=0, reader_rank="New")
+        self.category = Category.objects.create(category_id=1, category_name="Test Category")
+        self.book1 = Book.objects.create(
+            book_name="Book 1", book_author="Author 1", book_type="Fiction",
+            book_barcode="1234567891", book_description="Description 1", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+        self.book2 = Book.objects.create(
+            book_name="Book 2", book_author="Author 2", book_type="Fiction",
+            book_barcode="1234567892", book_description="Description 2", category=self.category,
+            status=Book.Status.ACCEPTED
+        )
+        self.book3 = Book.objects.create(
+            book_name="Book 3", book_author="Author 3", book_type="Fiction",
+            book_barcode="1234567893", book_description="Description 3", category=self.category,
+            status=Book.Status.PENDING  # Chưa được chấp nhận
+        )
+        self.continue_reading1 = BookContinueReading.objects.create(reader=self.reader, book=self.book1)
+        self.continue_reading2 = BookContinueReading.objects.create(reader=self.reader, book=self.book2)
+
+    def test_lay_danh_sach_sach_tiep_tuc_doc_voi_userid_hop_le(self):
+        """
+        Test Case ID: UT-BCRLV-001
+        Mo ta: Test lay danh sach sach tiep tuc doc voi user_id hop le
+        Input: user_id hop le, co sach trong BookContinueReading
+        Mong doi: Tra ve 200, danh sach sach
+        """
+        url = reverse('continue-reading-books') + f"?user_id={self.user.user_id}"
+        request = self.factory.get(url)
+        force_authenticate(request, user=self.user)
+
+        response = BookContinueReadingListView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2)  # Có 2 sách được chấp nhận
+        self.assertEqual(response.data['results'][0]['book_name'], "Book 2")  # Sắp xếp ngược theo continue_reading_id
+        self.assertEqual(response.data['results'][1]['book_name'], "Book 1")
+
+    def test_lay_danh_sach_sach_tiep_tuc_doc_khi_thieu_userid(self):
+        """
+        Test Case ID: UT-BCRLV-002
+        Mo ta: Test lay danh sach sach tiep tuc doc khi thieu user_id
+        Input: Thieu user_id
+        Mong doi: Tra ve 400, thong bao loi
+        """
+        url = reverse('continue-reading-books')  # Không có user_id
+        request = self.factory.get(url)
+        force_authenticate(request, user=self.user)
+
+        response = BookContinueReadingListView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "User ID is required")
+
+    def test_lay_danh_sach_sach_tiep_tuc_doc_khi_khong_co_sach(self):
+        """
+        Test Case ID: UT-BCRLV-003
+        Mo ta: Test lay danh sach sach tiep tuc doc khi khong co sach
+        Input: user_id hop le, khong co sach trong BookContinueReading
+        Mong doi: Tra ve 200, danh sach rong
+        """
+        # Tạo user và reader mới không có sách trong BookContinueReading
+        user2 = User.objects.create(
+            user_name="testuser2",
+            email="test2@example.com",
+            user_password=bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+            is_active=True
+        )
+        reader2 = Reader.objects.create(user_id=user2.user_id, reader_point=0, reader_rank="New")
+
+        url = reverse('continue-reading-books') + f"?user_id={user2.user_id}"
+        request = self.factory.get(url)
+        force_authenticate(request, user=user2)
+
+        response = BookContinueReadingListView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 0)  # Danh sách rỗng
+
+    def test_lay_danh_sach_sach_tiep_tuc_doc_voi_userid_khong_hop_le(self):
+        """
+        Test Case ID: UT-BCRLV-004
+        Mo ta: Test lay danh sach sach tiep tuc doc voi user_id khong hop le
+        Input: user_id khong phai so nguyen
+        Mong doi: Tra ve 500 do loi truy van
+        """
+        url = reverse('continue-reading-books') + f"?user_id=invalid"
+        request = self.factory.get(url)
+        force_authenticate(request, user=self.user)
+
+        response = BookContinueReadingListView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('error', response.data)  

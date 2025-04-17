@@ -1145,6 +1145,7 @@ class AddBookToWishlist(APIView):
         # Validate the book existence
         try:
             book = Book.objects.get(book_id=book_id)
+            
         except Book.DoesNotExist:
             return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
 
