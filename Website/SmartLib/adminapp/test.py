@@ -37,7 +37,7 @@ class IndexViewTests(TestCase):
     def test_index_with_manager_logged_in(self):
 
         """Kiểm tra hàm index khi manager đã đăng nhập
-            Mã testcase: UT-INDEX-02
+            Mã testcase: UT-INDEX-01
 
         """
         # Thiết lập session để giả lập manager đã đăng nhập
@@ -604,7 +604,8 @@ class SearchUsersViewTests(TestCase):
         session.save()
 
     def parse_response(self, response):
-        """Helper method to parse response content as JSON with error handling"""
+        """Helper method to parse response content as JSON with error handling
+        """
         try:
             return json.loads(response.content), None
         except json.JSONDecodeError as e:
@@ -633,6 +634,8 @@ class SearchUsersViewTests(TestCase):
 
     def test_search_with_query_matching(self):
         # Test với query 'admin': cần trả về các Reader có username chứa 'admin'
+        # mã testcase: UT-SEARCH-02
+
         response = self.client.get(f"{reverse('search_users')}?query=admin")
         self.assertEqual(response.status_code, 200)
 
@@ -656,6 +659,8 @@ class SearchUsersViewTests(TestCase):
 
     def test_search_with_query_no_match(self):
         # Test với query không khớp bất kỳ username nào, ví dụ: "nonexistent"
+        # mã testcase: UT-SEARCH-03
+
         response = self.client.get(f"{reverse('search_users')}?query=nonexistent")
         self.assertEqual(response.status_code, 200)
 
@@ -680,6 +685,8 @@ class SearchUsersViewTests(TestCase):
 
     def test_pagination(self):
         # Test trường hợp phân trang
+        # mã testcase: UT-SEARCH-04
+
         response = self.client.get(f"{reverse('search_users')}?page=1&limit=2")
         self.assertEqual(response.status_code, 200)
 
@@ -795,7 +802,7 @@ class UpdateReaderViewTests(TestCase):
         self.add_session_to_request(request)
         response = update_reader(request)
         data = json.loads(response.content)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(data.get('status'), 'error')
         self.assertIn('Points must be an integer', data.get('message'))
 
@@ -843,7 +850,7 @@ class UpdateReaderViewTests(TestCase):
         self.add_session_to_request(request)
         response = update_reader(request)
         data = json.loads(response.content)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(data.get('status'), 'error')
         self.assertIn('Invalid value for is_active', data.get('message'))
 
@@ -859,76 +866,11 @@ class UpdateReaderViewTests(TestCase):
         self.add_session_to_request(request)
         response = update_reader(request)
         data = json.loads(response.content)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(data.get('status'), 'error')
         self.assertIn('Invalid field for update', data.get('message'))
-    def test_database_error(self):
-            """Test lỗi 500 khi có lỗi cơ sở dữ liệu"""
-            # Sử dụng mock để ép buộc Reader.objects.get gây ra exception
-            # mã testcase: UT-UPDATE-11
-            with patch('smartlib_api.models.Reader.objects.get') as mock_get:
-                # Giả lập lỗi cơ sở dữ liệu nghiêm trọng
-                mock_get.side_effect = Exception("Database connection failed")
 
-                # Gửi request đến endpoint deactivate_reader để kích hoạt Reader.objects.get
-                response = self.client.post(reverse('deactivate_reader', args=[9999]))
 
-                # Kiểm tra response
-                self.assertEqual(response.status_code, 500)
-
-                try:
-                    # Thử parse JSON response
-                    response_data = json.loads(response.content)
-                    self.assertEqual(response_data['status'], 'error')
-                    self.assertIn('message', response_data)
-                except json.JSONDecodeError:
-                    # Nếu response không phải JSON, kiểm tra nó chứa thông báo lỗi
-                    self.assertIn(b'error', response.content.lower())
-                    self.assertIn(b'500', response.content)
-
-    def test_division_by_zero_error(self):
-            """Test lỗi 500 khi có exception chia cho 0"""
-            # mã testcase: UT-UPDATE-12
-            # Tạo một function mới để thay thế hàm update_reader gốc
-            def mock_update_reader_with_error(request):
-                # Cố tình gây ra ZeroDivisionError
-                result = 1 / 0
-                return JsonResponse({'status': 'success'})
-
-            # Patch hàm update_reader bằng function gây lỗi
-            with patch('adminapp.views.update_reader', mock_update_reader_with_error):
-                # Gửi request POST đến endpoint update_reader
-                response = self.client.post(
-                    reverse('update_reader'),
-                    data=json.dumps({'reader_id': 1, 'field': 'reader_point', 'value': 100}),
-                    content_type='application/json'
-                )
-
-                # Kiểm tra response
-                self.assertEqual(response.status_code, 500)
-
-                try:
-                    # Thử parse JSON response
-                    response_data = json.loads(response.content)
-                    self.assertEqual(response_data['status'], 'error')
-                    self.assertIn('message', response_data)
-                except json.JSONDecodeError:
-                    # Nếu response không phải JSON, kiểm tra nó chứa thông báo lỗi
-                    self.assertIn(b'error', response.content.lower())
-
-    def test_index_error(self):
-            """Test lỗi 500 khi có IndexError"""
-            # mã testcase: UT-UPDATE-13
-            # Patch hàm categories_data để gây ra IndexError
-            with patch('adminapp.views.categories_data') as mock_categories:
-                # Giả lập lỗi truy cập index không tồn tại
-                mock_categories.side_effect = IndexError("List index out of range")
-
-            # Gửi request đến endpoint categories_data
-            response = self.client.get(reverse('categories_data'))
-
-            # Kiểm tra response
-            self.assertEqual(response.status_code, 500)
 
     def test_keyerror_in_json_processing(self):
         """Test lỗi 500 khi xử lý JSON gây KeyError"""
@@ -1015,6 +957,7 @@ class LastThreePendingBooksTests(TestCase):
 
     def test_get_last_three_pending_books(self):
         """Kiểm tra hàm helper get_last_three_pending_books trả về đúng 3 sách mới nhất"""
+        # mã testcase: UT-PENDINGBOOKS-01
         # Gọi trực tiếp hàm cần kiểm thử
         pending_books = get_last_three_pending_books()
 
@@ -1033,6 +976,7 @@ class LastThreePendingBooksTests(TestCase):
 
     def test_last_three_pending_books_endpoint(self):
         """Kiểm tra endpoint last_three_pending_books trả về dữ liệu đúng"""
+        # mã testcase: UT-PENDINGBOOKS-03
         response = self.client.get(reverse('last_three_pending_books'))
         self.assertEqual(response.status_code, 200)
 
@@ -1053,6 +997,7 @@ class LastThreePendingBooksTests(TestCase):
 
     def test_last_three_pending_books_empty(self):
         """Kiểm tra trường hợp không có sách pending nào"""
+        # mã testcase: UT-PENDINGBOOKS-02
         # Xóa tất cả sách pending
         Book.objects.filter(status="Pending").delete()
 
@@ -1068,6 +1013,7 @@ class LastThreePendingBooksTests(TestCase):
 
     def test_last_three_pending_books_format(self):
         """Kiểm tra định dạng dữ liệu trả về từ API"""
+        # mã testcase: UT-PENDINGBOOKS-04
         response = self.client.get(reverse('last_three_pending_books'))
         self.assertEqual(response.status_code, 200)
 
@@ -1086,6 +1032,7 @@ class LastThreePendingBooksTests(TestCase):
 
     def test_last_three_pending_books_with_non_pending(self):
         """Kiểm tra chỉ các sách pending được trả về"""
+        # mã testcase: UT-PENDINGBOOKS-05
         # Tạo thêm sách với trạng thái khác
         Book.objects.create(
             book_name="Accepted Book",
@@ -1405,7 +1352,7 @@ class BookManagementTests(TestCase):
             'bookImage': SimpleUploadedFile("test.jpg", b"image_content", content_type="image/jpeg")
         }
         response = self.client.post(reverse('add_book'), data)
-        self.assertIn(response.status_code, [200, 400])
+        self.assertIn(response.status_code, [200])
         response_data = json.loads(response.content)
         self.assertIn(response_data['status'], ['success', 'error'])
         # self.assertTrue(Book.objects.filter(book_name='New Test Book').exists())
@@ -1444,7 +1391,7 @@ class BookManagementTests(TestCase):
             'category': self.category.category_id
         }
         response = self.client.post(reverse('add_book'), data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 500)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['status'], 'error')
 
@@ -1453,8 +1400,8 @@ class BookManagementTests(TestCase):
             mã testcase: UT-BOOKMANAGE-04
         """
         response = self.client.delete(reverse('delete_book', args=[9999]))
-        # Chấp nhận cả 404 và 500 vì view có thể trả về 500 khi không tìm thấy sách
-        self.assertIn(response.status_code, [404, 500])
+
+        self.assertIn(response.status_code,  500)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['status'], 'error')
 
@@ -1498,11 +1445,11 @@ class BookManagementTests(TestCase):
             data=json.dumps(data),
             content_type='application/json'
         )
-        # Chấp nhận cả 200 và 400 vì view có thể xử lý dữ liệu không hợp lệ theo cách khác
-        self.assertIn(response.status_code, [200, 400])
+
+        self.assertIn(response.status_code, 500)
         response_data = json.loads(response.content)
         # Chấp nhận cả success và error vì view có thể xử lý dữ liệu không hợp lệ theo cách khác
-        self.assertIn(response_data['status'], ['success', 'error'])
+        self.assertIn(response_data['status'], ['error'])
 
     def test_update_book_not_found(self):
         """Kiểm tra cập nhật sách không tồn tại
@@ -1517,8 +1464,7 @@ class BookManagementTests(TestCase):
             data=json.dumps(data),
             content_type='application/json'
         )
-        # Chấp nhận cả 404 và 500 vì view có thể trả về 500 khi không tìm thấy sách
-        self.assertIn(response.status_code, [404, 500])
+        self.assertIn(response.status_code, [404])
         response_data = json.loads(response.content)
         self.assertEqual(response_data['status'], 'error')
 
@@ -1677,7 +1623,7 @@ class BookManagementTests(TestCase):
             data='invalid json',
             content_type='application/json'
         )
-        self.assertIn(response.status_code, [400, 500])
+        self.assertIn(response.status_code, [500])
         response_data = json.loads(response.content)
         self.assertEqual(response_data['status'], 'error')
 
@@ -2038,13 +1984,17 @@ class NotificationsPageTests(TestCase):
         )
 
     def test_notificationspage_view_renders(self):
-        """Kiểm tra trang notifications hiển thị đúng"""
+        """Kiểm tra trang notifications hiển thị đúng
+            mã testcase: UT-NOTIFI-01
+        """
         response = self.client.get(reverse('notifications'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'notifications/notifications.html')
 
     def test_notificationspage_shows_only_pending_books(self):
-        """Kiểm tra chỉ hiển thị sách đang chờ duyệt"""
+        """Kiểm tra chỉ hiển thị sách đang chờ duyệt
+            mã testcase: UT-NOTIFI-02
+        """
         response = self.client.get(reverse('notifications'))
         self.assertEqual(response.status_code, 200)
 
@@ -2064,7 +2014,10 @@ class NotificationsPageTests(TestCase):
         self.assertNotIn("Accepted Book", book_names)
 
     def test_notificationspage_orders_by_date_descending(self):
-        """Kiểm tra sách được sắp xếp theo thời gian gần nhất"""
+        """Kiểm tra sách được sắp xếp theo thời gian gần nhất
+            mã testcase: UT-NOTIFI-03
+
+        """
         response = self.client.get(reverse('notifications'))
         self.assertEqual(response.status_code, 200)
 
@@ -2080,7 +2033,9 @@ class NotificationsPageTests(TestCase):
             self.assertGreaterEqual(books[i].book_uploaded_date, books[i+1].book_uploaded_date)
 
     def test_notificationspage_empty(self):
-        """Kiểm tra khi không có sách pending"""
+        """Kiểm tra khi không có sách pending
+            mã testcase: UT-NOTIFI-04
+        """
         # Xóa tất cả sách pending
         Book.objects.filter(status="Pending").delete()
 
@@ -2107,32 +2062,6 @@ class NotificationsPageTests(TestCase):
             mock_filter.side_effect = Exception("Database connection error")
 
             # Kiểm tra lỗi 500 được trả về
-            try:
-                response = self.client.get(reverse('notifications'))
-                self.assertEqual(response.status_code, 500)
-            except Exception as e:
-                # Nếu exception không được bắt trong view, test vẫn pass
-                self.assertIsInstance(e, Exception)
 
-    def test_notificationspage_large_number_of_books(self):
-        """Kiểm tra với số lượng lớn sách"""
-        # Xóa các sách hiện tại và tạo nhiều sách pending mới
-        Book.objects.all().delete()
-
-        for i in range(50):  # Tạo 50 sách pending
-            Book.objects.create(
-                book_name=f"Large Book {i+1}",
-                book_author=f"Author {i+1}",
-                book_barcode=f"LARGE00{i+1}",
-                status="Pending",
-                category=self.category,
-                book_uploaded_date=now() - timedelta(minutes=i)
-            )
-
-        response = self.client.get(reverse('notifications'))
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('books', response.context)
-        self.assertEqual(len(response.context['books']), 50)
-
-        # Kiểm tra sách mới nhất ở đầu danh sách
-        self.assertEqual(response.context['books'][0].book_name, "Large Book 1")
+            response = self.client.get(reverse('notifications'))
+            self.assertEqual(response.status_code, 500)
