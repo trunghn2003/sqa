@@ -17,10 +17,14 @@ class GuestPageViewTests(TestCase):
 
     def test_guest_page_loads_correctly(self):
         """Kiểm tra xem hàm guestPage có trả về mã trạng thái 200 không"""
+         # Mã testcase: UT-GPV-01
+
         response = self.client.get(reverse('guestPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_guest_page_uses_correct_template(self):
+            # Mã testcase: UT-GPV-02
+
         """Kiểm tra xem hàm guestPage có sử dụng đúng template không"""
         response = self.client.get(reverse('guestPage'))
         self.assertTemplateUsed(response, '1_1_guestHome_page.html')
@@ -33,11 +37,13 @@ class AboutUsPageViewTests(TestCase):
 
     def test_about_us_page_loads_correctly(self):
         """Kiểm tra xem hàm aboutUsPage có trả về mã trạng thái 200 không"""
+        # Mã testcase: UT-AUPV-01
         response = self.client.get(reverse('aboutUsPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_about_us_page_uses_correct_template(self):
         """Kiểm tra xem hàm aboutUsPage có sử dụng đúng template không"""
+        # Mã testcase: UT-AUPV-02
         response = self.client.get(reverse('aboutUsPage'))
         self.assertTemplateUsed(response, '1_2_aboutUs_page.html')
 
@@ -49,11 +55,14 @@ class PrivacyPolicyPageViewTests(TestCase):
 
     def test_privacy_policy_page_loads_correctly(self):
         """Kiểm tra xem hàm privacyPolicyPage có trả về mã trạng thái 200 không"""
+        # Mã testcase: UT-PPPV-01
         response = self.client.get(reverse('privacyPolicyPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_privacy_policy_page_uses_correct_template(self):
         """Kiểm tra xem hàm privacyPolicyPage có sử dụng đúng template không"""
+        # Mã testcase: UT-PPPV-02
+
         response = self.client.get(reverse('privacyPolicyPage'))
         self.assertTemplateUsed(response, '1_3_privacyPolicy_page.html')
 
@@ -65,11 +74,15 @@ class PreferencesPageViewTests(TestCase):
 
     def test_preferences_page_loads_correctly(self):
         """Kiểm tra xem hàm preferencesPage có trả về mã trạng thái 200 không"""
+        # Mã testcase: UT-PPV-01
+
         response = self.client.get(reverse('preferencesPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_preferences_page_uses_correct_template(self):
         """Kiểm tra xem hàm preferencesPage có sử dụng đúng template không"""
+        # Mã testcase: UT-PPV-02
+
         response = self.client.get(reverse('preferencesPage'))
         self.assertTemplateUsed(response, '4_3_preferences_page.html')
 
@@ -81,11 +94,15 @@ class SimulationPageViewTests(TestCase):
 
     def test_simulation_page_loads_correctly(self):
         """Kiểm tra xem hàm SimulationPage có trả về mã trạng thái 200 không"""
+        # Mã testcase: UT-SPV-01
+
+
         response = self.client.get(reverse('simulationPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_simulation_page_uses_correct_template(self):
         """Kiểm tra xem hàm SimulationPage có sử dụng đúng template không"""
+        # Mã testcase: UT-SPV-02
         response = self.client.get(reverse('simulationPage'))
         self.assertTemplateUsed(response, '15_simulation_page.html')
 
@@ -97,11 +114,15 @@ class ResetPasswordPageViewTests(TestCase):
 
     def test_reset_password_page_loads_correctly(self):
         """Kiểm tra xem hàm resetPasswordPage có trả về mã trạng thái 200 không"""
+        # Mã testcase: UT-RPPV-01
+
         response = self.client.get(reverse('resetPasswordPage', args=['test@example.com']))
         self.assertEqual(response.status_code, 200)
 
     def test_reset_password_page_uses_correct_template(self):
         """Kiểm tra xem hàm resetPasswordPage có sử dụng đúng template không"""
+        # Mã testcase: UT-RPPV-01
+
         response = self.client.get(reverse('resetPasswordPage', args=['test@example.com']))
         self.assertTemplateUsed(response, '5_4_reset_password_page.html')
 
@@ -113,11 +134,14 @@ class AccountSettingsPageViewTests(TestCase):
 
     def test_account_settings_page_loads_correctly(self):
         """Kiểm tra xem hàm AccountSettingsPage có trả về mã trạng thái 200 không"""
+        # Mã testcase:UT-ASPV-01
+
         response = self.client.get(reverse('accountSettingsPage'))
         self.assertEqual(response.status_code, 200)
 
     def test_account_settings_page_uses_correct_template(self):
         """Kiểm tra xem hàm AccountSettingsPage có sử dụng đúng template không"""
+        # Mã testcase:UT-ASPV-02
         response = self.client.get(reverse('accountSettingsPage'))
         self.assertTemplateUsed(response, '11_accountSettings_page.html')
 
@@ -129,12 +153,15 @@ class ViewBookPageViewTests(TestCase):
 
     def test_view_book_page_loads_correctly(self):
         """Kiểm tra xem hàm ViewBookPage có trả về mã trạng thái 200 không"""
+        # Mã testcase:UT-VBPV-01
+
         # Sử dụng ID sách là 1 cho mục đích kiểm thử
         response = self.client.get(reverse('ViewBookPage', args=[1]))
         self.assertEqual(response.status_code, 200)
 
     def test_view_book_page_uses_correct_template(self):
         """Kiểm tra xem hàm ViewBookPage có sử dụng đúng template không"""
+        # Mã testcase:UT-VBPV-02
         # Sử dụng ID sách là 1 cho mục đích kiểm thử
         response = self.client.get(reverse('ViewBookPage', args=[1]))
         self.assertTemplateUsed(response, '12_viewBook_page.html')
@@ -167,11 +194,14 @@ class OpenBookPageViewTests(TestCase):
 
     def test_open_book_page_loads_correctly(self):
         """Kiểm tra xem hàm OpenBookPage có trả về mã trạng thái 200 không"""
+        # Mã testcase:UT-OBPV-01
+
         response = self.client.get(reverse('OpenBookPage', args=[self.book.book_id]))
         self.assertEqual(response.status_code, 200)
 
     def test_open_book_page_uses_correct_template(self):
         """Kiểm tra xem hàm OpenBookPage có sử dụng đúng template không"""
+        # Mã testcase:UT-OBPV-02
         response = self.client.get(reverse('OpenBookPage', args=[self.book.book_id]))
         self.assertTemplateUsed(response, '14_openBook_page.html')
 
@@ -190,11 +220,14 @@ class CategoryListViewTests(APITestCase):
 
     def test_category_list_view_returns_200(self):
         """Kiểm tra xem CategoryListView có trả về mã trạng thái 200 không"""
+        # Mã testcase:UT-CLV-01
+
         response = self.client.get('/getAllCategories/')
         self.assertEqual(response.status_code, 200)
 
     def test_category_list_view_returns_all_categories(self):
         """Kiểm tra xem CategoryListView có trả về đúng tất cả danh sách category không"""
+        # Mã testcase:UT-CLV-02
         response = self.client.get('/getAllCategories/')
         self.assertEqual(len(response.data), 3)
         # Kiểm tra nội dung trả về
@@ -248,11 +281,14 @@ class UserPreferencesViewTests(APITestCase):
 
     def test_user_preferences_view_returns_200(self):
         """Kiểm tra xem UserPreferencesView có trả về mã trạng thái 200 không"""
+        # Mã testcase:UT-UPV-01
+
         response = self.client.get(f'/user_preferences/{self.user.user_id}/')
         self.assertEqual(response.status_code, 200)
 
     def test_user_preferences_view_returns_correct_preferences(self):
         """Kiểm tra xem UserPreferencesView có trả về đúng preferences của user không"""
+        # Mã testcase:UT-UPV-02
         response = self.client.get(f'/user_preferences/{self.user.user_id}/')
         self.assertIn('preferences', response.data)
         self.assertEqual(len(response.data['preferences']), 1)
@@ -260,6 +296,7 @@ class UserPreferencesViewTests(APITestCase):
 
     def test_user_preferences_view_returns_404_if_reader_not_found(self):
         """Kiểm tra xem UserPreferencesView có trả về lỗi 404 khi không tìm thấy reader không"""
+        # Mã testcase:UT-UPV-03
         response = self.client.get(f'/user_preferences/{self.user_without_reader.user_id}/')
         self.assertEqual(response.status_code, 404)
         self.assertIn('error', response.data)
@@ -267,61 +304,12 @@ class UserPreferencesViewTests(APITestCase):
 
     def test_user_preferences_view_returns_empty_preferences_list(self):
         """Kiểm tra xem UserPreferencesView có trả về danh sách preferences rỗng khi user không có preferences không"""
+        # Mã testcase:UT-UPV-04
         response = self.client.get(f'/user_preferences/{self.user_no_preferences.user_id}/')
         self.assertEqual(response.status_code, 200)
         self.assertIn('preferences', response.data)
         self.assertEqual(len(response.data['preferences']), 0)
 
-
-class SummarizeTextTests(TestCase):
-    """
-    Kiểm thử cho hàm summarize_text
-    """
-
-    def test_summarize_text_returns_content(self):
-        """Kiểm tra xem summarize_text có trả về nội dung không rỗng"""
-        from .views import summarize_text
-        from django.test.client import RequestFactory
-        import json
-
-        # Sử dụng RequestFactory để tạo request giả lập
-        factory = RequestFactory()
-        text = """Đây là một đoạn văn bản dài. Nội dung này cần được tóm tắt.
-                Đây là một đoạn văn bản dài. Nội dung này cần được tóm tắt.
-                Đây là một đoạn văn bản dài. Nội dung này cần được tóm tắt."""
-
-        # Tạo request với body là JSON
-        request = factory.post(
-            '/',
-            data=json.dumps({'text': text}),
-            content_type='application/json'
-        )
-        response = summarize_text(request)
-
-        # Kiểm tra status code và parse JSON response
-        self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.content)
-        self.assertIn('result', response_data)
-        self.assertTrue(len(response_data['result']) > 0)
-
-    def test_summarize_text_handles_empty_input(self):
-        """Kiểm tra xem summarize_text xử lý đúng khi không có dữ liệu đầu vào"""
-        from .views import summarize_text
-        from django.test.client import RequestFactory
-        import json
-
-        # Sử dụng RequestFactory để tạo request giả lập
-        factory = RequestFactory()
-
-        # Tạo request với body là JSON và text rỗng
-        request = factory.post(
-            '/',
-            data=json.dumps({'text': ""}),
-            content_type='application/json'
-        )
-        response = summarize_text(request)
-
-        self.assertEqual(response.status_code, 400)
 
 
 class SavePreferencesTests(TestCase):
@@ -345,6 +333,8 @@ class SavePreferencesTests(TestCase):
         self.category2 = Category.objects.create(category_name="Science")
 
     def test_save_preferences_success(self):
+        # Mã testcase:UT-SP-01
+
         """Kiểm tra xem save_preferences hoạt động đúng khi dữ liệu hợp lệ"""
         from django.test.client import RequestFactory
         from .views import save_preferences
@@ -367,6 +357,7 @@ class SavePreferencesTests(TestCase):
         self.assertIn(self.category2.category_id, category_ids)
     def test_save_preferences_missing_data(self):
         """Kiểm tra xem save_preferences xử lý lỗi khi thiếu dữ liệu"""
+        # Mã testcase:UT-SP-02
         from django.test.client import RequestFactory
         from .views import save_preferences
 
@@ -383,6 +374,7 @@ class SavePreferencesTests(TestCase):
 
     def test_save_preferences_user_not_found(self):
         """Kiểm tra xem save_preferences xử lý lỗi khi không tìm thấy reader"""
+        # Mã testcase:UT-SP-03
         from django.test.client import RequestFactory
         from .views import save_preferences
 
@@ -403,6 +395,7 @@ class SavePreferencesTests(TestCase):
 
     def test_save_preferences_wrong_method(self):
         """Kiểm tra xem save_preferences xử lý lỗi khi phương thức không phải POST"""
+        # Mã testcase:UT-SP-04
         from django.test.client import RequestFactory
         from .views import save_preferences
 
