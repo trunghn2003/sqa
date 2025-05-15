@@ -29,13 +29,13 @@ class AddRatingAndReviewViewTests(APITestCase):
         self.factory = APIRequestFactory()
         self.view = AddRatingAndReviewView.as_view()
         self.add_review_url = reverse('insertRatingAndReview')
-        
+
         # Tao category de test
         self.category = Category.objects.create(
             category_id=1,
             category_name="Test Category"
         )
-        
+
         # Tao manager
         self.manager_user = User.objects.create(
             user_name="Test Manager",
@@ -43,12 +43,12 @@ class AddRatingAndReviewViewTests(APITestCase):
             user_password="$2b$12$2.302RNsA8cEA6QHXpuJMun5mR/.hsGSuSwMxFTG4rfiEmiViu1/W",
             is_active=True
         )
-        
+
         self.manager = Manager.objects.create(
             manager_id=2,
             user=self.manager_user
         )
-        
+
         # Tao reader
         self.user = User.objects.create(
             user_name="tienngo",
@@ -56,13 +56,13 @@ class AddRatingAndReviewViewTests(APITestCase):
             user_password="$2b$12$2.302RNsA8cEA6QHXpuJMun5mR/.hsGSuSwMxFTG4rfiEmiViu1/W",
             is_active=True
         )
-        
+
         self.reader = Reader.objects.create(
             user_id=self.user.user_id,
             reader_point=0,
             reader_rank="New"
         )
-        
+
         # Tao test book
         self.book = Book.objects.create(
             book_name="Test Book",
@@ -81,12 +81,12 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Review duoc tao, diem duoc cap nhat, thong bao duoc gui
         """
         print("\n=== Starting test_successful_review_addition ===")
-        
+
         initial_review_count = Rating_And_Review.objects.count()
         initial_points = self.reader.reader_point
         print(f"Initial review count: {initial_review_count}")
         print(f"Initial reader points: {initial_points}")
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
@@ -94,7 +94,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             'review': 'Tuyet voi ong mat troi'
         }
         print(f"Sending request with data: {data}")
-        
+
         # Tạo và gửi request qua APIRequestFactory
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
@@ -102,26 +102,26 @@ class AddRatingAndReviewViewTests(APITestCase):
         print(f"Response data: {response.data}")
 
         # Kiểm thử response
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, 
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
-        
+
         # Kiểm thử trang thai database
         final_review_count = Rating_And_Review.objects.count()
         self.assertEqual(final_review_count, initial_review_count + 1,
                         f"Review count should increase by 1 (was {initial_review_count}, now {final_review_count})")
-        
+
         new_review = Rating_And_Review.objects.first()
         self.assertEqual(new_review.rating, 5,
                         f"Rating should be 5, got {new_review.rating}")
         self.assertEqual(new_review.review, 'Tuyet voi ong mat troi',
                         f"Review text should be 'Tuyet voi ong mat troi', got '{new_review.review}'")
-        
+
         # Kiểm thử cap nhat diem
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
         self.assertEqual(final_points, initial_points + 20,
                         f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
-        
+
         # Kiểm thử gamification record
         gamification_record = Gamification_Record.objects.filter(
             reader_id=reader.reader_id,
@@ -131,7 +131,7 @@ class AddRatingAndReviewViewTests(APITestCase):
                            "Gamification record should be created")
         self.assertEqual(gamification_record.achieved_point, 20,
                         f"Gamification points should be 20, got {gamification_record.achieved_point}")
-        
+
         # Kiểm thử notification
         notification = Notification.objects.filter(
             reader_id=reader.reader_id,
@@ -141,7 +141,7 @@ class AddRatingAndReviewViewTests(APITestCase):
                            "Notification should be created")
         self.assertEqual(notification.notification_record, "+20 Point for Rating And Review Book",
                         f"Notification message should be '+20 Point for Rating And Review Book', got '{notification.notification_record}'")
-        
+
         print("=== Test completed successfully ===\n")
 
     def test_missing_fields(self):
@@ -151,21 +151,21 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Tra ve 400 Bad Request
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
             'rating': 5
             # Thieu truong 'review'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -176,21 +176,21 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Tra ve 404 Not Found
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         data = {
             'book_id': 999,  # ID sach khong ton tai
             'user_id': self.reader.user_id,
             'rating': 5,
             'review': 'Tuyet voi ong mat troi'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -201,21 +201,21 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Tra ve 404 Not Found
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': 999,  # ID nguoi doc khong ton tai
             'rating': 5,
             'review': 'Tuyet voi ong mat troi'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -226,7 +226,7 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Lan gui thu hai se that bai voi 400 Bad Request
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         # Lan review dau tien
         data = {
             'book_id': self.book.pk,
@@ -234,23 +234,23 @@ class AddRatingAndReviewViewTests(APITestCase):
             'rating': 5,
             'review': 'First review'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        
+
         # Kiểm thử trang thai database sau lan review dau tien
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
-        
+
         # Thu gui review lan hai
         data['review'] = 'Second review'
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
 
@@ -261,7 +261,7 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Tra ve 400 Bad Request
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         # Tao sach dang cho duyet
         pending_book = Book.objects.create(
             book_name="Pending Book",
@@ -279,14 +279,14 @@ class AddRatingAndReviewViewTests(APITestCase):
             'rating': 5,
             'review': 'Tuyet voi ong mat troi'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -297,7 +297,7 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong doi: Tra ve 400 Bad Request
         """
         initial_review_count = Rating_And_Review.objects.count()
-        
+
         # Tao sach da bi tu choi
         rejected_book = Book.objects.create(
             book_name="Rejected Book",
@@ -315,14 +315,14 @@ class AddRatingAndReviewViewTests(APITestCase):
             'rating': 5,
             'review': 'Tuyet voi ong mat troi'
         }
-        
+
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
-        
+
         # Kiểm thử trang thai database (khong duoc thay doi)
         self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -333,7 +333,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
             """
             initial_review_count = Rating_And_Review.objects.count()
-            
+
             # Test danh gia toi da
             data = {
                 'book_id': self.book.pk,
@@ -341,14 +341,14 @@ class AddRatingAndReviewViewTests(APITestCase):
                 'rating': 6,  # Danh gia khong hop le
                 'review': 'Tuyet voi ong mat troi'
             }
-            
+
             request = self.factory.post(self.add_review_url, data, format='json')
             response = self.view(request)
-            
+
             # Kiểm thử response
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('error', response.data)
-            
+
             # Kiểm thử trang thai database (khong duoc thay doi)
             self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
 
@@ -359,7 +359,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             Mong doi: Tra ve 400 Bad Request cho danh gia ngoai khoang 1-5
             """
             initial_review_count = Rating_And_Review.objects.count()
-            
+
             # Test danh gia toi da
             data = {
                 'book_id': self.book.pk,
@@ -367,17 +367,17 @@ class AddRatingAndReviewViewTests(APITestCase):
                 'rating': 0,  # Danh gia khong hop le
                 'review': 'Tuyet voi ong mat troi'
             }
-            
+
             request = self.factory.post(self.add_review_url, data, format='json')
             response = self.view(request)
-            
+
             # Kiểm thử response
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('error', response.data)
-            
+
             # Kiểm thử trang thai database (khong duoc thay doi)
             self.assertEqual(Rating_And_Review.objects.count(), initial_review_count)
-            
+
     def test_invalid_data_types(self):
             """
             Test Case ID: UT-RAR-010
@@ -392,7 +392,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             }
             request = self.factory.post(self.add_review_url, data, format='json')
             response = self.view(request)
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     def test_empty_review(self):
             """
             Test Case ID: UT-RAR-011
@@ -430,7 +430,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             Mong doi: Chi mot review duoc tao
             """
             initial_review_count = Rating_And_Review.objects.count()
-            
+
             # Tạo request
             data = {
                 'book_id': self.book.pk,
@@ -438,11 +438,11 @@ class AddRatingAndReviewViewTests(APITestCase):
                 'rating': 5,
                 'review': 'Concurrent review'
             }
-            
+
             # Gửi nhiều request
             requests = [self.factory.post(self.add_review_url, data, format='json') for _ in range(5)]
             responses = [self.view(request) for request in requests]
-            
+
             # Chỉ có 1 review được gửi đi
             self.assertEqual(Rating_And_Review.objects.count(), initial_review_count + 1)
     def test_book_deleted_during_review(self):
@@ -461,7 +461,7 @@ class AddRatingAndReviewViewTests(APITestCase):
             # Xóa sách sau khi tạo request nhưng trước khi xử lý
             request = self.factory.post(self.add_review_url, data, format='json')
             self.book.delete()
-            
+
             response = self.view(request)
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
     def test_bronze_rank_achievement(self):
@@ -471,17 +471,17 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong đợi: Rank của reader được cập nhật thành Bronze, điểm tăng đúng 20
         """
         print("\n=== Starting test_bronze_rank_achievement ===")
-        
+
         # Thiết lập reader với 480 điểm (gần ngưỡng Bronze)
         self.reader.reader_point = 480
         self.reader.reader_rank = "New"
         self.reader.save()
-        
+
         initial_points = self.reader.reader_point
         initial_rank = self.reader.reader_rank
         print(f"Initial reader points: {initial_points}")
         print(f"Initial reader rank: {initial_rank}")
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
@@ -489,16 +489,16 @@ class AddRatingAndReviewViewTests(APITestCase):
             'review': 'Great book!'
         }
         print(f"Sending request with data: {data}")
-        
+
         # Gửi request
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
-        
+
         # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
@@ -507,7 +507,7 @@ class AddRatingAndReviewViewTests(APITestCase):
                         f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
         self.assertEqual(final_rank, "Bronze",
                         f"Reader rank should be Bronze, got {final_rank}")
-        
+
         print("=== Test completed successfully ===\n")
 
     def test_silver_rank_achievement(self):
@@ -517,17 +517,17 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong đợi: Rank của reader được cập nhật thành Silver, điểm tăng đúng 20
         """
         print("\n=== Starting test_silver_rank_achievement ===")
-        
+
         # Thiết lập reader với 1480 điểm (gần ngưỡng Silver)
         self.reader.reader_point = 1480
         self.reader.reader_rank = "Bronze"
         self.reader.save()
-        
+
         initial_points = self.reader.reader_point
         initial_rank = self.reader.reader_rank
         print(f"Initial reader points: {initial_points}")
         print(f"Initial reader rank: {initial_rank}")
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
@@ -535,16 +535,16 @@ class AddRatingAndReviewViewTests(APITestCase):
             'review': 'Good book!'
         }
         print(f"Sending request with data: {data}")
-        
+
         # Gửi request
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
-        
+
         # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
@@ -553,7 +553,7 @@ class AddRatingAndReviewViewTests(APITestCase):
                         f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
         self.assertEqual(final_rank, "Silver",
                         f"Reader rank should be Silver, got {final_rank}")
-        
+
         print("=== Test completed successfully ===\n")
 
     def test_gold_rank_achievement(self):
@@ -563,17 +563,17 @@ class AddRatingAndReviewViewTests(APITestCase):
         Mong đợi: Rank của reader được cập nhật thành Gold, điểm tăng đúng 20
         """
         print("\n=== Starting test_gold_rank_achievement ===")
-        
+
         # Thiết lập reader với 2980 điểm (gần ngưỡng Gold)
         self.reader.reader_point = 2980
         self.reader.reader_rank = "Silver"
         self.reader.save()
-        
+
         initial_points = self.reader.reader_point
         initial_rank = self.reader.reader_rank
         print(f"Initial reader points: {initial_points}")
         print(f"Initial reader rank: {initial_rank}")
-        
+
         data = {
             'book_id': self.book.pk,
             'user_id': self.reader.user_id,
@@ -581,16 +581,16 @@ class AddRatingAndReviewViewTests(APITestCase):
             'review': 'Amazing book!'
         }
         print(f"Sending request with data: {data}")
-        
+
         # Gửi request
         request = self.factory.post(self.add_review_url, data, format='json')
         response = self.view(request)
         print(f"Response status code: {response.status_code}")
-        
+
         # Kiểm thử response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
                         "Response status code should be 201 Created")
-        
+
         # Kiểm thử cập nhật điểm và rank
         reader = Reader.objects.get(user_id=self.reader.user_id)
         final_points = reader.reader_point
@@ -599,7 +599,7 @@ class AddRatingAndReviewViewTests(APITestCase):
                         f"Reader points should increase by 20 (was {initial_points}, now {final_points})")
         self.assertEqual(final_rank, "Gold",
                         f"Reader rank should be Gold, got {final_rank}")
-        
+
         print("=== Test completed successfully ===\n")
 
 class RatingAndReviewListViewTests(APITestCase):
@@ -697,7 +697,7 @@ class RatingAndReviewListViewTests(APITestCase):
         request = self.factory.get(self.url, {'book_id': 999})
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 0) 
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_book_id_khong_phai_so(self):
         """
@@ -970,7 +970,7 @@ class NotificationListViewTests(APITestCase):
             user_password="$2b$12$2.302RNsA8cEA6QHXpuJMun5mR/.hsGSuSwMxFTG4rfiEmiViu1/W",
             is_active=True
         )
-        
+
         self.manager = Manager.objects.create(
             manager_id=2,
             user=self.manager_user
@@ -1042,7 +1042,7 @@ class LastThreeNotificationListViewTests(APITestCase):
             user_password="$2b$12$2.302RNsA8cEA6QHXpuJMun5mR/.hsGSuSwMxFTG4rfiEmiViu1/W",
             is_active=True
         )
-        
+
         self.manager = Manager.objects.create(
             manager_id=2,
             user=self.manager_user
@@ -1452,7 +1452,7 @@ class RankPageTests(TestCase):
 class WishListPageTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.url = reverse('wishListPage')  # Đảm bảo tên này trùng với tên trong urls.py
+        self.url = reverse('wish-listPage')  # Đảm bảo tên này trùng với tên trong urls.py
 
     def test_truy_cap_trang_wishlist_thanh_cong(self):
         """
@@ -1621,7 +1621,7 @@ class AddBookToWishlistTests(APITestCase):
         request = self.factory.post(self.url, data, format='json')
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
+
     def test_nguoi_doc_khong_ton_tai(self):
         """
         Test Case ID: UT-ABW-04
@@ -1676,7 +1676,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': self.user.user_id}
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['message'], "Book removed from wishlist")
         self.assertEqual(WishList.objects.count(), 0)
@@ -1693,7 +1693,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': self.user.user_id}
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "Book not in wishlist")
 
@@ -1707,7 +1707,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': 9999}
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "Reader not found")
 
@@ -1722,7 +1722,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': 9999, 'user_id': self.user.user_id}
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(WishList.objects.count(), 1)  # Wishlist không bị xóa vì lỗi xảy ra
 
@@ -1736,7 +1736,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': self.book.pk}  # Thieu user_id
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1750,7 +1750,7 @@ class RemoveBookFromWishlistTests(APITestCase):
         data = {'book_id': "invalid", 'user_id': self.user.user_id}
         request = self.factory.post(reverse('remove_from_wishlist'), data, format='json')
         response = RemoveBookFromWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1782,7 +1782,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': self.reader.user_id}
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['in_wishlist'])
 
@@ -1797,7 +1797,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': self.reader.user_id}
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data['in_wishlist'])
 
@@ -1812,7 +1812,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': 9999}
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "Reader not found")
 
@@ -1827,7 +1827,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': self.book.pk}  # Thieu user_id
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1842,7 +1842,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': self.book.pk, 'user_id': 'invalid'}
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1857,7 +1857,7 @@ class CheckBookInWishlistTests(APITestCase):
         data = {'book_id': 'invalid', 'user_id': self.user.user_id}
         request = self.factory.get(reverse('check_book_in_wishlist'), data, format='json')
         response = CheckBookInWishlist.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1888,7 +1888,7 @@ class WishListListViewTests(APITestCase):
         WishList.objects.create(book_id=self.book.pk, reader_id=self.reader.reader_id)
         request = self.factory.get(reverse('getWishList_ListView'), {'user_id': str(self.reader.user_id)})
         response = WishListListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
         self.assertEqual(len(response.data['results']), 1)
@@ -1903,7 +1903,7 @@ class WishListListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getWishList_ListView'), {'user_id': str(self.reader.user_id)})
         response = WishListListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
         self.assertEqual(len(response.data['results']), 0)
@@ -1917,7 +1917,7 @@ class WishListListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getWishList_ListView'), {})
         response = WishListListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "User ID not found")
 
@@ -1930,7 +1930,7 @@ class WishListListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getWishList_ListView'), {'user_id': 'invalid'})
         response = WishListListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -1943,7 +1943,7 @@ class WishListListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getWishList_ListView'), {'user_id': '9999'})
         response = WishListListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data['error'], "Reader not found")
 class LastThreeWishListViewTests(APITestCase):
@@ -2013,7 +2013,7 @@ class LastThreeWishListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getLastThreeWishListView'), {})
         response = LastThreeWishListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -2026,7 +2026,7 @@ class LastThreeWishListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': 'invalid'})
         response = LastThreeWishListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -2039,7 +2039,7 @@ class LastThreeWishListViewTests(APITestCase):
         """
         request = self.factory.get(reverse('getLastThreeWishListView'), {'user_id': '9999'})
         response = LastThreeWishListView.as_view()(request)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], "Reader not found")
 class InsertFeedbackViewTests(APITestCase):
@@ -2241,7 +2241,7 @@ class RemoveUploadedBookViewTests(APITestCase):
 
         # Vì code gốc có lỗi FieldError, mong đợi 500 thay vì 200
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
 
     def test_xoa_sach_da_upload_khi_thieu_du_lieu(self):
         """
@@ -2290,7 +2290,7 @@ class RemoveUploadedBookViewTests(APITestCase):
 
         # Vì code gốc có lỗi FieldError, mong đợi 500 thay vì 404
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
 
     def test_xoa_sach_da_upload_voi_book_khong_ton_tai(self):
         """
@@ -2310,7 +2310,7 @@ class RemoveUploadedBookViewTests(APITestCase):
 
         # Vì code gốc khong xu ly Book.DoesNotExist, mong doi 500
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
 
     def test_xoa_sach_da_upload_voi_userid_khong_hop_le(self):
         """
@@ -2327,7 +2327,7 @@ class RemoveUploadedBookViewTests(APITestCase):
 
         # Vì code khong xu ly kieu du lieu, se gap loi khi truy van Reader, mong doi 500
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
 
     def test_xoa_sach_da_upload_voi_bookid_khong_hop_le(self):
         """
@@ -2339,10 +2339,12 @@ class RemoveUploadedBookViewTests(APITestCase):
         url = reverse('remove_uploaded_book') + f"?book_id=invalid&user_id={self.reader.user_id}"
         request = self.factory.delete(url)
         force_authenticate(request, user=self.user)
+        response = RemoveUploadedBookView.as_view()(request)
+
 
         # Vì code khong xu ly kieu du lieu, se gap loi khi truy van UploadedBook, mong doi 500
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
 class BookContinueReadingListViewTests(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -2445,4 +2447,4 @@ class BookContinueReadingListViewTests(APITestCase):
         response = BookContinueReadingListView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn('error', response.data)  
+        self.assertIn('error', response.data)
